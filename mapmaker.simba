@@ -1,0 +1,52 @@
+program SPS_MapMaker;
+
+(**
+ *  Running this script loads SPS/worldmap.png and slices the huge map
+ *  into 500x500 pieces, which over lap each other by 100 pixels. The process
+ *  will take several minutes. Images are saved to SPS_IMG_PATH.
+ *
+ *  - marpis
+ *)
+
+const
+  PATH_MAP = appPath + '/Includes/SPS/img/runescape_surface/runescape_surface_map.png';
+  PATH_IMG = appPath + '/Includes/SPS/img/runescape_surface/';
+
+function cropBitmap(bmp, x1, y1, x2, y2: integer): integer;
+var
+  x, y, w, h: integer;
+begin
+  w := (x2 - x1 + 1);
+  h := (y2 - y1 + 1);
+
+  result := bitmapFromString(w, h, '');
+
+  for x := 0 to (w - 1)  do
+    for y := 0 to (h - 1)  do
+      fastSetPixel(result, x, y, fastGetPixel(bmp, x1 + x, y1 + y));
+end;
+
+procedure sliceMap;
+var
+  mapBMP, tmpBMP: integer;
+  x, y, i, x1, y1, x2, y2: integer;
+begin
+  mapBMP := loadBitmap(PATH_MAP);
+
+  for x := 0 to 17 do
+    for y := 0 to 15 do
+    begin
+      tmpBMP := cropBitmap(mapBMP, x * 400, y * 400, x * 400 + 499, y * 400 + 499);
+      saveBitmap(tmpBMP, PATH_IMG + toStr(x)+'_'+toStr(y)+'.bmp');
+      freeBitmap(tmpBMP);
+      inc(i);
+      writeln('## Saved '+toStr(i));
+    end;
+
+  freeBitmap(mapBMP);
+end;
+
+begin
+  clearDebug;
+  sliceMap;
+end.
