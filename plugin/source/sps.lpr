@@ -11,73 +11,28 @@ type
   T4DIntegerArray = Array of Array of Array of Array of Integer;
 
 
+function SPS_ColorBoxesMatchInline(B1, B2: TIntegerArray; tol: extended): boolean; inline;
+var
+  oneMinusTol,tolPlusOne: extended;
+begin
+  oneMinusTol := 1-tol;
+  tolPlusOne := 1+tol;
+  Result := ((B1[0] >= Round(B2[0]*oneMinusTol)) and (B1[0] <= Round(B2[0]*tolPlusOne))) and
+      ((B1[1] >= Round(B2[1]*oneMinusTol)) and (B1[1] <= Round(B2[1]*tolPlusOne))) and
+      ((B1[2] >= Round(B2[2]*oneMinusTol)) and (B1[2] <= Round(B2[2]*tolPlusOne)));
+end;
+
 function SPS_ColorBoxesMatch(B1, B2: TIntegerArray; tol: extended): boolean; register;
 begin
-  Result := False;
-  if (B1[0] >= Round(B2[0]*(1-tol))) and (B1[0] <= Round(B2[0]*(1+tol))) and
-       (B1[1] >= Round(B2[1]*(1-tol))) and (B1[1] <= Round(B2[1]*(1+tol))) and
-         (B1[2] >= Round(B2[2]*(1-tol))) and (B1[2] <= Round(B2[2]*(1+tol))) then
-         begin
-           Result := True;
-         end;
+  Result := SPS_ColorBoxesMatchInline(B1, B2, tol);
 end;
 
-procedure ColorToRGB(Color: Integer; out r, g, b: Integer); inline; // inline for optimization.
-begin
-  r := (Color) and 255;
-  g := (Color shr 8) and 255;
-  b := (Color shr 16) and 255;
-end;
-
-function SPS_MakeColorBoxEx(bmp: TMufasaBitmap; x1, y1: integer): TIntegerArray;
-//[0]=Red [1]=Green [2]=Blue
-var
-  x, y, width: integer;
-  C: TColor;
-  R, G, B: integer;
-begin
-  SetLength(Result, 3);
-  width := bmp.Width; // may not be necessary, but should help a bit.
-
-  for x := (x1 + 4) downto x1 do    // flipped these to downto since order is irrelevant
-    for y := (y1 + 4) downto y1 do  // downto will calc the initial only once rather than each time.
-    begin
-      try
-        C := bmp.FData[y*width + x];   // much faster than calling getPixel[x,y]
-        ColorToRGB(C, R, G, B);
-        Result[0] := Result[0] + R;
-        Result[1] := Result[1] + G;
-        Result[2] := Result[2] + B;
-      except
-        //writeln('ColorToRGB exception: '+inttostr(x)+', '+inttostr(y));
-      end;
-    end;
-end;
-
-function SPS_BitmapToMap(bmp: TMufasaBitmap): T3DIntegerArray; register;
-var
-  X, Y, HighX, HighY: integer;
-begin
-  HighX := Trunc(bmp.Width / (5.0));
-  HighY := Trunc(bmp.Height / (5.0));
-
-  SetLength(Result, HighX);//moved outside to remove memory management iteration
-  for X := 0 to HighX-1 do
-  begin
-    SetLength(Result[X], HighY); // see above.
-    for Y := 0 to HighY-1 do
-    begin
-      Result[X][Y] := SPS_MakeColorBoxEx(bmp, X*5, Y*5);
-    end;
-  end;
-end;
-
-//
 function SPS_FindMapInMapEx(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended): integer; register;
 var
   x, y, HighX, HighY, cm, L: integer;
   xx, yy: integer;
   Matching, BestMatch: integer;
+  b: Boolean;
 begin
   fX := -1;
   fY := -1;
@@ -96,8 +51,10 @@ begin
         Matching := 0;
         for xx := 0 to 19 do
           for yy := 0 to 19 do
-            if SPS_ColorBoxesMatch(LargeMap[cm][x+xx][y+yy], SmallMap[xx][yy], tol) then
-              Inc(Matching);
+          begin
+            b:= SPS_ColorBoxesMatchInline(LargeMap[cm][x+xx][y+yy], SmallMap[xx][yy], tol);
+            if (b) then Inc(Matching);
+          end;
 
         if (Matching > BestMatch) then
         begin
