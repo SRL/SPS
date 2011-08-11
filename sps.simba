@@ -9,12 +9,12 @@
 // *                                                               //
 //-----------------------------------------------------------------//
 
-{$LOADLIB SPS.dll} // Load SPS.dll plugin
+{$loadlib sps} // Load the sps library
 
 
 const
 // Path where all the SPS files are
-  SPS_IMG_PATH       = AppPath + '/Includes/SRL/SRL/core/SPS/img/';
+  SPS_IMG_PATH   = IncludePath + 'SPS\img\runescape_surface\';
   SPS_IMG_FMT    = '.png';
 // RGB tolerance used, 0.2 = 20% etc.
   SPS_TOLERANCE  = 0.2;
