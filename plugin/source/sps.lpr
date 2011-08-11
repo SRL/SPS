@@ -3,28 +3,67 @@ library sps;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, sysutils, Graphics, FileUtil, bitmaps;
+  Classes, sysutils, FileUtil, Interfaces, mufasatypes, bitmaps;
 
 type
-  TIntegerArray = Array of Integer;
-  T3DIntegerArray = Array of Array of Array of Integer;
-  T4DIntegerArray = Array of Array of Array of Array of Integer;
-
+  T3DIntegerArray = array of T2DIntegerArray;
+  T4DIntegerArray = array of T3DIntegerArray;
 
 function SPS_ColorBoxesMatchInline(B1, B2: TIntegerArray; tol: extended): boolean; inline;
 var
-  oneMinusTol,tolPlusOne: extended;
+  oneMinusTol, tolPlusOne: extended;
 begin
-  oneMinusTol := 1-tol;
-  tolPlusOne := 1+tol;
-  Result := ((B1[0] >= Round(B2[0]*oneMinusTol)) and (B1[0] <= Round(B2[0]*tolPlusOne))) and
-      ((B1[1] >= Round(B2[1]*oneMinusTol)) and (B1[1] <= Round(B2[1]*tolPlusOne))) and
-      ((B1[2] >= Round(B2[2]*oneMinusTol)) and (B1[2] <= Round(B2[2]*tolPlusOne)));
+  oneMinusTol := 1 - tol;
+  tolPlusOne := tol + 1;
+  Result := ((B1[0] >= Round(B2[0] * oneMinusTol)) and
+             (B1[0] <= Round(B2[0] * tolPlusOne))) and
+            ((B1[1] >= Round(B2[1] * oneMinusTol)) and
+             (B1[1] <= Round(B2[1] * tolPlusOne))) and
+            ((B1[2] >= Round(B2[2] * oneMinusTol)) and
+             (B1[2] <= Round(B2[2] * tolPlusOne)));
 end;
 
 function SPS_ColorBoxesMatch(B1, B2: TIntegerArray; tol: extended): boolean; register;
 begin
   Result := SPS_ColorBoxesMatchInline(B1, B2, tol);
+end;
+
+function SPS_MakeColorBoxEx(bmp: TMufasaBitmap; x1, y1: integer): TIntegerArray;
+var
+  x, y, width: integer;
+  C: TRGB32;
+begin
+  SetLength(Result, 3);
+  width := bmp.Width; // may not be necessary, but should help a bit.
+
+  for x := (x1 + 4) downto x1 do    // flipped these to downto since order is irrelevant
+    for y := (y1 + 4) downto y1 do  // downto will calc the initial only once rather than each time.
+    begin
+      try
+        C := bmp.FData[y * width + x];
+        Result[0] := Result[0] + C.R;
+        Result[1] := Result[1] + C.G;
+        Result[2] := Result[2] + C.B;
+      except end;
+    end;
+end;
+
+function SPS_BitmapToMap(bmp: TMufasaBitmap): T3DIntegerArray; register;
+var
+  X, Y, HighX, HighY: integer;
+begin
+  HighX := Trunc(bmp.Width / (5.0));
+  HighY := Trunc(bmp.Height / (5.0));
+
+  SetLength(Result, HighX);
+  for X := 0 to HighX - 1 do
+  begin
+    SetLength(Result[X], HighY);
+    for Y := 0 to HighY - 1 do
+    begin
+      Result[X][Y] := SPS_MakeColorBoxEx(bmp, X * 5, Y * 5);
+    end;
+  end;
 end;
 
 function SPS_FindMapInMapEx(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended): integer; register;
@@ -69,42 +108,35 @@ begin
   if (Result > -1) then
   begin
     // moved outside to remove uncessary calculations in interations.
-    fX := fX*5 + 50;  // cause we want the center
-    fy := fY*5 + 50;
+    fX := fX * 5 + 50;  // cause we want the center
+    fy := fY * 5 + 50;
   end;
 end;
 
-
-//////  TYPES //////////////////////////////////////////////////////////////////
+//////  EXPORTING  /////////////////////////////////////////////////////////////
 
 function GetTypeCount(): Integer; stdcall; export;
 begin
   Result := 2;
 end;
 
-function GetTypeInfo(x: Integer; var sType, sTypeDef: string): integer; stdcall;
+function GetTypeInfo(x: Integer; var sType, sTypeDef: string): integer; stdcall; export;
 begin
   case x of
-
     0: begin
         sType := 'T3DIntegerArray';
-        sTypeDef := 'Array of Array of Array of Integer;';
+        sTypeDef := 'array of T2DIntegerArray;';
       end;
-
     1: begin
         sType := 'T4DIntegerArray';
-        sTypeDef := 'Array of T3DIntegerArray;';
+        sTypeDef := 'array of T3DIntegerArray;';
       end;
-
     else
-      Result := -1;
+      x := -1;
   end;
+  Result := x;
 end;
 
-
-
-
-//////  EXPORTING  /////////////////////////////////////////////////////////////
 function GetFunctionCount(): Integer; stdcall; export;
 begin
   Result := 3;
@@ -114,15 +146,14 @@ function GetFunctionCallingConv(x : Integer) : Integer; stdcall; export;
 begin
   Result := 0;
   case x of
-     0..2 : Result := 1;
+     0..2: Result := 1;
   end;
 end;
 
 function GetFunctionInfo(x: Integer; var ProcAddr: Pointer; var ProcDef: PChar): Integer; stdcall; export;
 begin
   case x of
-    0:
-      begin
+    0: begin
         ProcAddr := @SPS_ColorBoxesMatch;
         StrPCopy(ProcDef, 'function SPS_ColorBoxesMatch(B1, B2: TIntegerArray; tol: extended): boolean;');
       end;
@@ -141,8 +172,6 @@ begin
   end;
   Result := x;
 end;
-
-
 
 exports GetTypeCount;
 exports GetTypeInfo;
