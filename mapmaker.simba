@@ -9,8 +9,8 @@ program SPS_MapMaker;
  *)
 
 const
-  PATH_MAP = appPath + '/Includes/SPS/img/runescape_surface/runescape_surface_map.png';
-  PATH_IMG = appPath + '/Includes/SPS/img/runescape_surface/';
+  PATH_MAP = IncludePath + 'SPS\img\runescape_surface\runescape_surface_map.png';
+  PATH_IMG = IncludePath + 'SPS\img\runescape_surface\';
 
 function cropBitmap(bmp, x1, y1, x2, y2: integer): integer;
 var
@@ -47,6 +47,7 @@ begin
 end;
 
 begin
-  clearDebug;
+  ClearDebug;
+  ForceDirectory(PATH_IMG);
   sliceMap;
 end.
