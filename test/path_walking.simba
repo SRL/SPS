@@ -1,0 +1,34 @@
+program spsTest;
+{$DEFINE SMART}
+{$i srl/srl.scar}
+{$i sps/sps.simba}
+
+var
+  t: integer;
+  p: TPoint;
+  pts: TPointArray;
+begin
+  smart_server := 152;
+  smart_members := false;
+  smart_signed := true;
+  smart_superDetail := false;
+
+  clearDebug();
+  setupSRL();
+
+  SPS_Debug := true;
+  SPS_Areas := ['10_6', '10_7']; // Edgeville & Barbarian Village
+
+  // Edge bank to Barb fishing spot north
+  pts := [ point(4440, 2805), point(4375, 2460), point(4215, 2770),
+           point(4165, 2795), point(4190, 2840), point(4195, 2885),
+           point(4250, 2905) ];
+  repeat
+    inc(t);
+
+    if (SPS_WalkPath(pts)) then
+      writeLn(format('Walked %d times', [t]));
+
+    invertTPA(pts);
+  until(t = 50);
+end.

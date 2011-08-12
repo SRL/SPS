@@ -1,25 +1,22 @@
-//-----------------------------------------------------------------//
-//--                SRL Resource Library                         --//
-//--                Positioning routines                         --//
-//-----------------------------------------------------------------//
-// *  SPS_GetMyPos: TPoint;                            by: marpis  //
-// *  SPS_PosToMM(P: TPoint): TPoint;                  by: marpis  //
-// *  SPS_WalkToPos(P: TPoint): boolean;               by: marpis  //
-// *  SPS_WalkPath(Path: TPointArray): boolean;        by: marpis  //
-// *                                                               //
-//-----------------------------------------------------------------//
+(*
+SPS ~ SRL Positioning System
+============================
+
+Concept and original work done by marpis @ SRL-Forums.
+
+*)
 
 {$loadlib sps} // Load the sps library
 
-
 const
-// Path where all the SPS files are
+  // Path where all the SPS files are
   SPS_IMG_PATH   = IncludePath + 'SPS\img\runescape_surface\';
   SPS_IMG_FMT    = '.png';
-// RGB tolerance used, 0.2 = 20% etc.
+
+  // RGB tolerance used, 0.2 = 20% etc.
   SPS_TOLERANCE  = 0.2;
 
-// Offsets for Reflection conversion
+  // Offsets for Reflection conversion
   SPS_OFFSET_X = 2044.0;
   SPS_OFFSET_Y = 4162.0;
 
@@ -29,6 +26,7 @@ var
   SPS_Areas: TStringArray;
   SPS_Worldmap: T4DIntegerArray;
 
+// Gets the map pieces that appear on the minimap
 function SPS_GatherMinimap: T3DIntegerArray;
 var
   bmp: TMufasaBitmap;
@@ -37,22 +35,21 @@ begin
   try
     bmp := TMufasaBitmap.Create;
     bmp.SetSize(100, 100);
-    //writeln('created bitmap');
+
     c := getTClient;
     bmp.CopyClientToBitmap(
         c.IOManager, false, 0,0, MMCX-50, MMCY-50, MMCX+50, MMCY+50
       );
-    //writeln('copied the bitmap to the bitmap..');
+
     Result := SPS_BitmapToMap(bmp);
-    //Writeln('result set..');
   finally
-    bmp.free; // just in case
+    bmp.free;
   except
     Writeln('[ERROR] GATHERMINIMAP:: '+ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 
-
+//
 procedure SPS_GetAreaCoords(Area: string; var x, y: integer);
 var
   p: integer;
@@ -64,10 +61,12 @@ begin
 
   x := StrToIntDef(copy(Area, 1, p-1), -1);
   y := StrToIntDef(copy(Area, p+1, Length(Area)-p), -1);
+
   if (SPS_Debug) then
-    writeln(format('[SPS] area coords (%d, %d)', [x,y]));
+    writeln(format('[SPS] Area coords (%d, %d)', [x, y]));
 end;
 
+// Converts a point from a map piece to a point on the entire map
 function SPS_LocalToGlobal(Area: string; x, y: integer): TPoint;
 var
   cx, cy: integer;
@@ -77,7 +76,8 @@ begin
   Result.y := cy*400 + y;
 end;
 
-procedure LoadSPS;
+// Gets SPS ready to be used (this doesn't have to be called in scripts)
+procedure SPS_Load;
 var
   L, i, timer : integer;
   img: TMufasaBitmap;
@@ -87,7 +87,7 @@ begin
 
   if (L <= 0) then
   begin
-    writeln('[SPS] WARNDING: SPS_Areas hasn''t been set');
+    writeln('[SPS] WARNING: SPS_Areas hasn''t been set');
     exit;
   end;
 
@@ -103,18 +103,19 @@ begin
 		  img.LoadFromFile(SPS_IMG_PATH + SPS_Areas[i] + SPS_IMG_FMT);
 		  SPS_Worldmap[i] := SPS_BitmapToMap(img);
     finally
-      img.free; // just in case ;)
+      img.free;
     except
-      Writeln('[ERROR] LOADSPS: '+ExceptionToString(ExceptionType, ExceptionParam));
+      Writeln('[ERROR] SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
     end;
   end;
 
   if (SPS_Debug) then
     Writeln('[SPS] Maps loaded in '+ToStr(getSystemTime - timer)+'ms.');
+
   SPS_Loaded := True;
 end;
 
-
+// Returns the SPS position of the player
 function SPS_GetMyPos: TPoint;
 var
   Minimap: T3DIntegerArray;
@@ -126,7 +127,7 @@ begin
     Exit;
 
   if not SPS_Loaded then
-    LoadSPS;
+    SPS_Load;
   
   // we should just rotate the minimap according to the minimap angle.
   ClickNorth(True);
@@ -137,41 +138,52 @@ begin
   begin
     if (SPS_Debug) then
       WriteLn('[SPS] Did not gather Minimap.');
+
     Exit;
   end;
-    
-  //WriteLn('gathered minimap..');
+
   try
     map := SPS_FindMapInMapEx(
         Result.X, Result.Y, SPS_Worldmap, Minimap, SPS_TOLERANCE
       );
-    //writeln('found map in map ex. :D');
+
     if ((Result.X > 0) and (Result.Y > 0)) then
     begin
       Result := SPS_LocalToGlobal(SPS_Areas[map], Result.X, Result.Y);
     end;
 
-    //writeln(
-    //    Format(
-    //        '[SPS] GetMyPos :: Finished in %d ms. Location = %s',
-    //        [getSystemTime-t, ToStr(Result)]
-    //      )
-    //  );
+    if (SPS_Debug) then
+      writeln(format('[SPS] GetMyPos: Finished in %d ms. Location = %s',
+        [getSystemTime - t, toStr(result)]));
+
   except
     Writeln('[SPS] ERROR' + ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 
-function SPS_PixelToPoint(pixel: TPoint): TPoint;
+// Converts an SPS pos to a tile
+function SPS_PosToTile(pos: TPoint): TPoint;
 begin
-  Result.X := Round(SPS_OFFSET_X + (pixel.X / 4));
-  Result.Y := Round(SPS_OFFSET_Y - (pixel.Y / 4));
+  result.X := round(SPS_OFFSET_X + (pos.x / 4));
+  result.Y := round(SPS_OFFSET_Y - (pos.y / 4));
 end;
 
-function SPS_PointToPixel(point: TPoint): TPoint;
+// Converts a tile to and SPS point, or "pos"
+function SPS_TileToPos(tile: TPoint): TPoint;
 begin
-  Result.X := Round((point.x - SPS_OFFSET_X) * 4);
-  Result.Y := Round((SPS_OFFSET_Y - point.y) * 4);
+  result.X := round((tile.x - SPS_OFFSET_X) * 4);
+  result.Y := round((SPS_OFFSET_Y - tile.y) * 4);
+end;
+
+// Converts a tile path to an SPS path
+function SPS_TilePathToPos(tiles: TPointArray): TPointArray;
+var
+  i: integer;
+begin
+  setLength(result, length(tiles));
+
+  for i := 0 to high(result) do
+    result[i] := SPS_TileToPos(tiles[i]);
 end;
 
 // Finds position P in minimap by checking your own location
@@ -205,6 +217,7 @@ begin
   end;
 end;
 
+// Returns true if the point "Pt" is on the minimap
 function SPS_PosOnMM(Pt: TPoint): Boolean;
 var
   p: TPoint;
@@ -213,7 +226,7 @@ begin
   Result := rs_OnMinimap(p.x, p.y);
 end;
 
-// Walks from A to B, always walking as far as possible.
+// Walks the path "Path"; always walks to the furthest point possible
 function SPS_WalkPath(Path: TPointArray): boolean;
 var
   I, H, T: integer;
