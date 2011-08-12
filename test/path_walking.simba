@@ -5,7 +5,6 @@ program spsTest;
 
 var
   t: integer;
-  p: TPoint;
   pts: TPointArray;
 begin
   smart_server := 152;
@@ -17,12 +16,9 @@ begin
   setupSRL();
 
   SPS_Debug := true;
-  SPS_Areas := ['10_6', '10_7']; // Edgeville & Barbarian Village
+  SPS_Areas := ['10_6']; // Edgeville
 
-  // Edge bank to Barb fishing spot north
-  pts := [ point(4440, 2805), point(4375, 2460), point(4215, 2770),
-           point(4165, 2795), point(4190, 2840), point(4195, 2885),
-           point(4250, 2905) ];
+  pts := [];
   repeat
     inc(t);
 
