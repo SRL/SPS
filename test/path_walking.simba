@@ -1,0 +1,30 @@
+program spsTest;
+{$DEFINE SMART}
+{$i srl/srl.scar}
+{$i sps/sps.simba}
+
+var
+  t: integer;
+  pts: TPointArray;
+begin
+  smart_server := 152;
+  smart_members := false;
+  smart_signed := true;
+  smart_superDetail := false;
+
+  clearDebug();
+  setupSRL();
+
+  SPS_Debug := true;
+  SPS_Areas := ['10_6']; // Edgeville
+
+  pts := [];
+  repeat
+    inc(t);
+
+    if (SPS_WalkPath(pts)) then
+      writeLn(format('Walked %d times', [t]));
+
+    invertTPA(pts);
+  until(t = 50);
+end.
