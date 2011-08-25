@@ -18,7 +18,8 @@ begin
   SPS_Debug := true;
   SPS_Areas := ['10_6']; // Edgeville
 
-  pts := [];
+  pts := [ Point(3673, 1679), Point(3650, 1707), Point(1231, 3213),
+           Point(9879, 7897), Point(3372, 2175) ];
   repeat
     inc(t);
 
