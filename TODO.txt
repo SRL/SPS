@@ -1,11 +1,13 @@
 SPS TO-DO List
 ~~~~~~~~~~~~~~
 
-- dungeon support
-  -- dungeon folders found in sps/img/dungeons.rar
+-- dungeon support
+   -- dungeon folders found in sps/img/dungeons.rar
 
-- faster path walking
+-- faster path walking
 
-- access violation fix
+-- access violation fix
 
-- more accurate reflection offsets
+-- script to automatically:
+   -- create world map @ 100% zoom
+   -- get SPS areas based on a given path
