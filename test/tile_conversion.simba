@@ -1,0 +1,40 @@
+program spsTest;
+{$DEFINE SMART}
+{$i srl/srl.scar}
+{$i sps/sps.simba}
+{$i reflection/reflection.simba}
+{$i srl/srl/misc/paintsmart.scar}
+
+var
+  t: integer;
+  refTL, refBR, spsTL, spsBR, mmRefTL, mmRefBR, mmSPSTL, mmSPSBR, mPos: TPoint;
+begin
+  smart_server := 152;
+  smart_members := false;
+  smart_signed := true;
+  smart_superDetail := false;
+
+  clearDebug();
+  setupSRL();
+
+  smart_SetupDebug();
+  clearRSCanvas(SMART_Canvas.canvas);
+
+  SPS_Debug := true;
+  SPS_Areas := ['10_9']; // Draynor Bank
+
+  mPos := getMyPos();
+
+  refTL := tile(mPos.x - 5, mPos.y + 5);
+  refBR := tile(mPos.x + 5, mPos.y - 5);
+  spsTL := SPS_TileToPos(point(refTL.x, refTL.y));
+  spsBR := SPS_TileToPos(point(refBR.x, refBR.y));
+
+  mmRefTL := tileToMM(refTL);
+  mmRefBR := tileToMM(refBR);
+  mmSPSTL := SPS_PosToMM(spsTL);
+  mmSPSBR := SPS_PosToMM(spsBR);
+
+  SMART_DrawBoxEx(true, intToBox(mmRefTL.x, mmRefTL.y, mmRefBR.x, mmRefBR.y), clGreen);
+  SMART_DrawBoxEx(false, intToBox(mmSPSTL.x, mmSPSTL.y, mmSPSBR.x, mmSPSBR.y), clBlue);
+end.

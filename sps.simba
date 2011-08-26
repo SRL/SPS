@@ -17,8 +17,8 @@ const
   SPS_TOLERANCE  = 0.2;
 
   // Offsets for Reflection conversion
-  SPS_OFFSET_X = 2044.0;
-  SPS_OFFSET_Y = 4162.0;
+  SPS_OFFSET_X = 2045.3;
+  SPS_OFFSET_Y = 4159.2;
 
 // SPS Global variables
 var
