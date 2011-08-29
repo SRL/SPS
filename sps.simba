@@ -14,7 +14,7 @@ const
   SPS_IMG_FMT    = '.png';
 
   // RGB tolerance used, 0.2 = 20% etc.
-  SPS_TOLERANCE  = 0.2;
+  SPS_TOLERANCE  = 0.3;
 
   // Offsets for Reflection conversion
   SPS_OFFSET_X = 2045.3;
