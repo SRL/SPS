@@ -10,13 +10,13 @@ Concept and original work done by marpis @ SRL-Forums.
 
 const
   // Path where all the SPS files are
-  SPS_IMG_PATH   = IncludePath + 'SPS\img\runescape_surface\';
+  SPS_IMG_PATH   = IncludePath + 'SPS\img\';
   SPS_IMG_FMT    = '.png';
 
   // RGB tolerance used, 0.2 = 20% etc.
   SPS_TOLERANCE  = 0.3;
 
-  // Offsets for Reflection conversion
+  // Offsets for Reflection conversion (runescape_surface only!)
   SPS_OFFSET_X = 2045.3;
   SPS_OFFSET_Y = 4159.2;
 
@@ -24,7 +24,22 @@ const
 var
   SPS_Loaded, SPS_Debug: boolean;
   SPS_Areas: TStringArray;
+  SPS_Surface: string;
   SPS_Worldmap: T4DIntegerArray;
+
+// Should be called in scripts to setup SPS
+// Needs to be called each time the surface changes (i.e. from runescape_surface to essence_mine)
+procedure SPS_Setup(surface: string; areas: TStringArray);
+begin
+  SPS_Surface := surface;
+  SPS_Areas   := areas;
+
+  if (SPS_Debug) then
+  begin
+    writeln('[SPS] SPS_Surface: ' + SPS_Surface);
+    writeln('[SPS] SPS_Areas: ' + toStr(SPS_Areas));
+  end;
+end;
 
 // Gets the map pieces that appear on the minimap
 function SPS_GatherMinimap: T3DIntegerArray;
@@ -49,7 +64,6 @@ begin
   end;
 end;
 
-//
 procedure SPS_GetAreaCoords(Area: string; var x, y: integer);
 var
   p: integer;
@@ -72,8 +86,8 @@ var
   cx, cy: integer;
 begin
   SPS_GetAreaCoords(Area, cx, cy);
-  Result.x := cx*400 + x;
-  Result.y := cy*400 + y;
+  Result.x := cx * 400 + x;
+  Result.y := cy * 400 + y;
 end;
 
 // Gets SPS ready to be used (this doesn't have to be called in scripts)
@@ -91,21 +105,26 @@ begin
     exit;
   end;
 
+  if (SPS_Surface = '') then
+  begin
+    writeln('[SPS] WARNING: SPS_Surface isn''t set! Using runescape_surface as default');
+    SPS_Surface := 'runescape_surface';
+  end;
+
   // clean up the old one just in case, we do not want copies in wrong places.
   SetLength(SPS_WorldMap, 0);
   SetLength(SPS_Worldmap, L);
 
-  //Writeln('[SPS] Building maps... Estimated time: '+ToStr(5600*L)+' ms.');
   for i := L-1 downto 0 do
   begin
     try
 		  img := TMufasaBitmap.Create;
-		  img.LoadFromFile(SPS_IMG_PATH + SPS_Areas[i] + SPS_IMG_FMT);
+		  img.LoadFromFile(SPS_IMG_PATH + lowercase(SPS_Surface) + '\' + SPS_Areas[i] + SPS_IMG_FMT);
 		  SPS_Worldmap[i] := SPS_BitmapToMap(img);
     finally
       img.free;
     except
-      Writeln('[ERROR] SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
+      Writeln('[SPS] ERROR: SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
     end;
   end;
 

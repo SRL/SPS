@@ -16,11 +16,11 @@ begin
   setupSRL();
 
   SPS_Debug := true;
-  SPS_Areas := ['10_6']; // Edgeville
+  SPS_Setup('essence_mine', ['0_1']);
 
   // not a real path, just using as an example
-  pts := [ Point(3673, 1679), Point(3650, 1707), Point(1231, 3213),
-           Point(9879, 7897), Point(3372, 2175) ];
+  pts := [ point(298, 191), point(266, 223), point(248, 243),
+           point(267, 273), point(300, 295) ];
   repeat
     inc(t);
 
