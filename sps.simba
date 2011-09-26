@@ -10,20 +10,23 @@ Concept and original work done by marpis @ SRL-Forums.
 
 const
   // Path where all the SPS files are
-  SPS_IMG_PATH   = IncludePath + 'SPS\img\runescape_surface\';
-  SPS_IMG_FMT    = '.png';
+  SPS_PATH_SURFACE = IncludePath + 'SPS\img\runescape_surface\';
+  SPS_PATH_ESSENCE = IncludePath + 'SPS\img\essence_mine\';
+
+  SPS_IMG_PATH =  includePath + 'SPS/img/';
+  SPS_IMG_FMT  = '.png';
 
   // RGB tolerance used, 0.2 = 20% etc.
   SPS_TOLERANCE  = 0.3;
 
-  // Offsets for Reflection conversion
+  // Offsets for Reflection conversion (Runescape surface only)
   SPS_OFFSET_X = 2045.3;
   SPS_OFFSET_Y = 4159.2;
 
 // SPS Global variables
 var
   SPS_Loaded, SPS_Debug: boolean;
-  SPS_Areas: TStringArray;
+  SPS_Areas: array of TVariantArray; // SPS_Areas := [ ['runescape_surface', '9_7'], ['essence_mine', '0_1'] ];
   SPS_Worldmap: T4DIntegerArray;
 
 // Gets the map pieces that appear on the minimap
@@ -49,7 +52,6 @@ begin
   end;
 end;
 
-//
 procedure SPS_GetAreaCoords(Area: string; var x, y: integer);
 var
   p: integer;
@@ -79,11 +81,15 @@ end;
 // Gets SPS ready to be used (this doesn't have to be called in scripts)
 procedure SPS_Load;
 var
-  L, i, timer : integer;
+  c, L, i, j, timer: integer;
   img: TMufasaBitmap;
 begin
   timer := getSystemTime;
-  L := Length(SPS_Areas);
+
+  for j := 0 to high(SPS_Areas) do
+    incEx(L, length(SPS_Areas[i]) - 1);
+
+  writeln('SPS_Load: Length = ' + toStr(L));
 
   if (L <= 0) then
   begin
@@ -95,19 +101,22 @@ begin
   SetLength(SPS_WorldMap, 0);
   SetLength(SPS_Worldmap, L);
 
-  //Writeln('[SPS] Building maps... Estimated time: '+ToStr(5600*L)+' ms.');
-  for i := L-1 downto 0 do
-  begin
-    try
-		  img := TMufasaBitmap.Create;
-		  img.LoadFromFile(SPS_IMG_PATH + SPS_Areas[i] + SPS_IMG_FMT);
-		  SPS_Worldmap[i] := SPS_BitmapToMap(img);
-    finally
-      img.free;
-    except
-      Writeln('[ERROR] SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
+  for i := 0 to high(SPS_Areas) do
+    for j := 1 to high(SPS_Areas[i]) do
+    begin
+      try
+        img := TMufasaBitmap.Create;
+        img.LoadFromFile(SPS_IMG_PATH + SPS_Areas[i][0] + '/' + SPS_Areas[i][j] + SPS_IMG_FMT);
+        SPS_WorldMap[c] := SPS_BitmapToMap(img);
+        inc(c);
+      finally
+        img.Free;
+      except
+        writeln('[ERROR] SPS_Load: ' + exceptionToString(exceptionType, exceptionParam));
+      end;
     end;
-  end;
+
+  setLength(SPS_WorldMap, c);
 
   if (SPS_Debug) then
     Writeln('[SPS] Maps loaded in '+ToStr(getSystemTime - timer)+'ms.');
