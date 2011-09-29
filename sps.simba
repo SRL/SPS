@@ -16,27 +16,57 @@ const
   // RGB tolerance used, 0.2 = 20% etc.
   SPS_TOLERANCE  = 0.3;
 
-  // Offsets for Reflection conversion (runescape_surface only!)
-  SPS_OFFSET_X = 2045.3;
-  SPS_OFFSET_Y = 4159.2;
+  // Supported SPS surfaces
+  RUNESCAPE_SURFACE    = 0;
+  DUNGEON_ESSENCE_MINE = 1;
+
+type
+  TSPSSurface = record
+    Name, ImagePath: string;
+    FactorX, FactorY: integer; // used in SPS_LocalToGlobal
+    TileOffsetX, TileOffSetY: extended; // used for tile <-> SPS conversions
+  end;
 
 // SPS Global variables
 var
   SPS_Loaded, SPS_Debug: boolean;
   SPS_Areas: TStringArray;
-  SPS_Surface: string;
+  SPS_Surface: TSPSSurface;
   SPS_Worldmap: T4DIntegerArray;
 
 // Should be called in scripts to setup SPS
 // Needs to be called each time the surface changes (i.e. from runescape_surface to essence_mine)
-procedure SPS_Setup(surface: string; areas: TStringArray);
+procedure SPS_Setup(surface: integer; areas: TStringArray);
 begin
-  SPS_Surface := surface;
-  SPS_Areas   := areas;
+  SPS_Areas := areas;
+
+  case surface of
+    RUNESCAPE_SURFACE:
+      with SPS_Surface do
+      begin
+        Name        := 'Runescape Surface';
+        ImagePath   := SPS_IMG_PATH + 'runescape_surface\';
+        FactorX     := 400;
+        FactorY     := 400;
+        TileOffsetX := 2045.3;
+        TileOffSetY := 4159.2;
+      end;
+
+    DUNGEON_ESSENCE_MINE:
+      with SPS_Surface do
+      begin
+        Name        := 'Essence Mine';
+        ImagePath   := SPS_IMG_PATH + 'essence_mine\';
+        FactorX     := 400;
+        FactorY     := 1;
+        TileOffsetX := -1;
+        TileOffSetY := -1;
+      end;
+  end;
 
   if (SPS_Debug) then
   begin
-    writeln('[SPS] SPS_Surface: ' + SPS_Surface);
+    writeln('[SPS] SPS_Surface: ' + SPS_Surface.Name);
     writeln('[SPS] SPS_Areas: ' + toStr(SPS_Areas));
   end;
 end;
@@ -86,8 +116,8 @@ var
   cx, cy: integer;
 begin
   SPS_GetAreaCoords(Area, cx, cy);
-  Result.x := cx * 400 + x;
-  Result.y := cy * 400 + y;
+  Result.x := cx * SPS_Surface.FactorX + x;
+  Result.y := cy * SPS_Surface.FactorY + y;
 end;
 
 // Gets SPS ready to be used (this doesn't have to be called in scripts)
@@ -105,10 +135,10 @@ begin
     exit;
   end;
 
-  if (SPS_Surface = '') then
+  if (SPS_Surface.Name = '') then
   begin
-    writeln('[SPS] WARNING: SPS_Surface isn''t set! Using runescape_surface as default');
-    SPS_Surface := 'runescape_surface';
+    writeln('[SPS] WARNING: SPS_Surface isn''t set! Using Runescape Surface as default');
+    SPS_Setup(RUNESCAPE_SURFACE, SPS_Areas);
   end;
 
   // clean up the old one just in case, we do not want copies in wrong places.
@@ -119,7 +149,7 @@ begin
   begin
     try
 		  img := TMufasaBitmap.Create;
-		  img.LoadFromFile(SPS_IMG_PATH + lowercase(SPS_Surface) + '\' + SPS_Areas[i] + SPS_IMG_FMT);
+		  img.LoadFromFile(SPS_Surface.ImagePath + SPS_Areas[i] + SPS_IMG_FMT);
 		  SPS_Worldmap[i] := SPS_BitmapToMap(img);
     finally
       img.free;
@@ -183,15 +213,15 @@ end;
 // Converts an SPS pos to a tile
 function SPS_PosToTile(pos: TPoint): TPoint;
 begin
-  result.X := round(SPS_OFFSET_X + (pos.x / 4));
-  result.Y := round(SPS_OFFSET_Y - (pos.y / 4));
+  result.X := round(SPS_Surface.TileOffsetX + (pos.x / 4));
+  result.Y := round(SPS_Surface.TileOffsetY - (pos.y / 4));
 end;
 
 // Converts a tile to and SPS point, or "pos"
 function SPS_TileToPos(tile: TPoint): TPoint;
 begin
-  result.X := round((tile.x - SPS_OFFSET_X) * 4);
-  result.Y := round((SPS_OFFSET_Y - tile.y) * 4);
+  result.X := round((tile.x - SPS_Surface.TileOffsetX) * 4);
+  result.Y := round((SPS_Surface.TileOffsetY - tile.y) * 4);
 end;
 
 // Converts a tile path to an SPS path
@@ -255,6 +285,8 @@ begin
   T := GetSystemTime + 20000 + Random(5000);
   while (not Result) and (GetSystemTime < T) do
   begin
+    RunEnergy(20);
+
     P := SPS_GetMyPos;
     for I := H downto 0 do
     begin

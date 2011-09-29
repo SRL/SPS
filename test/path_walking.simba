@@ -16,11 +16,16 @@ begin
   setupSRL();
 
   SPS_Debug := true;
-  SPS_Setup('essence_mine', ['0_1']);
-
-  // not a real path, just using as an example
+  SPS_Setup(RUNESCAPE_SURFACE, ['11_7']);
+{
+  // Essence Mine
   pts := [ point(298, 191), point(266, 223), point(248, 243),
            point(267, 273), point(300, 295) ];
+}
+
+  // Aubury to VE Bank
+  pts := [ point(4830, 3030), point(4850, 3000), point(4830, 2950) ];
+
   repeat
     inc(t);
 
@@ -29,4 +34,6 @@ begin
 
     invertTPA(pts);
   until(t = 50);
+
+  SPS_GetMyPos();
 end.
