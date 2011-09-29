@@ -1,9 +1,6 @@
 SPS TO-DO List
 ~~~~~~~~~~~~~~
 
--- dungeon support
-   -- dungeon folders found in sps/img/dungeons.rar
-
 -- faster path walking
 
 -- access violation fix

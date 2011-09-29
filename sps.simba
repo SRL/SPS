@@ -23,6 +23,7 @@ const
 type
   TSPSSurface = record
     Name, ImagePath: string;
+    Constant: integer;
     FactorX, FactorY: integer; // used in SPS_LocalToGlobal
     TileOffsetX, TileOffSetY: extended; // used for tile <-> SPS conversions
   end;
@@ -45,6 +46,7 @@ begin
       with SPS_Surface do
       begin
         Name        := 'Runescape Surface';
+        Constant    := RUNESCAPE_SURFACE;
         ImagePath   := SPS_IMG_PATH + 'runescape_surface\';
         FactorX     := 400;
         FactorY     := 400;
@@ -56,6 +58,7 @@ begin
       with SPS_Surface do
       begin
         Name        := 'Essence Mine';
+        Constant    := DUNGEON_ESSENCE_MINE;
         ImagePath   := SPS_IMG_PATH + 'essence_mine\';
         FactorX     := 400;
         FactorY     := 1;
