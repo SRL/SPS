@@ -13,9 +13,6 @@ const
   SPS_IMG_PATH   = IncludePath + 'SPS\img\';
   SPS_IMG_FMT    = '.png';
 
-  // RGB tolerance used, 0.2 = 20% etc.
-  SPS_TOLERANCE  = 0.3;
-
   // Supported SPS surfaces
   RUNESCAPE_SURFACE    = 0;
   DUNGEON_ESSENCE_MINE = 1;
@@ -26,6 +23,7 @@ type
     Constant: integer;
     FactorX, FactorY: integer; // used in SPS_LocalToGlobal
     TileOffsetX, TileOffSetY: extended; // used for tile <-> SPS conversions
+    Tolerance: extended;
   end;
 
 // SPS Global variables
@@ -52,6 +50,7 @@ begin
         FactorY     := 400;
         TileOffsetX := 2045.3;
         TileOffSetY := 4159.2;
+        Tolerance   := 0.3;
       end;
 
     DUNGEON_ESSENCE_MINE:
@@ -64,6 +63,7 @@ begin
         FactorY     := 1;
         TileOffsetX := -1;
         TileOffSetY := -1;
+        Tolerance   := 0.5;
       end;
   end;
 
@@ -196,7 +196,7 @@ begin
 
   try
     map := SPS_FindMapInMapEx(
-        Result.X, Result.Y, SPS_Worldmap, Minimap, SPS_TOLERANCE
+        Result.X, Result.Y, SPS_Worldmap, Minimap, SPS_Surface.Tolerance
       );
 
     if ((Result.X > 0) and (Result.Y > 0)) then
@@ -297,7 +297,7 @@ begin
       MM.Y := MMCY + Path[I].Y - P.Y;
       if (Distance(MM.X, MM.Y, MMCX, MMCY) < 70) then
       begin
-        MouseFlag(MM.X, MM.Y, 0, 0, Integer(I<>H)*10);
+        MouseFlag(MM.X, MM.Y, 0, 0, Integer(I<>H)*15);
         T := getSystemTime + 20000 + Random(1000);
  	      Break;
       end;
