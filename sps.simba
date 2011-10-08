@@ -14,8 +14,8 @@ const
   SPS_IMG_FMT    = '.png';
 
   // Supported SPS surfaces
-  RUNESCAPE_SURFACE    = 0;
-  DUNGEON_ESSENCE_MINE = 1;
+  RUNESCAPE_SURFACE    = 1;
+  DUNGEON_ESSENCE_MINE = 2;
 
 type
   TSPSSurface = record
@@ -72,6 +72,8 @@ begin
     writeln('[SPS] SPS_Surface: ' + SPS_Surface.Name);
     writeln('[SPS] SPS_Areas: ' + toStr(SPS_Areas));
   end;
+
+  SPS_Loaded := false;
 end;
 
 // Gets the map pieces that appear on the minimap
@@ -171,7 +173,7 @@ end;
 function SPS_GetMyPos: TPoint;
 var
   Minimap: T3DIntegerArray;
-  t, i, map: integer;
+  t, map: integer;
 begin
   Result := Point(-1, -1);
   
