@@ -184,7 +184,8 @@ begin
     SPS_Load;
   
   // we should just rotate the minimap according to the minimap angle.
-  ClickNorth(True);
+  if (rs_GetCompassAngleDegrees <> 0) then
+    ClickNorth(True);
 
   t := getSystemTime;
   Minimap := SPS_GatherMinimap;
