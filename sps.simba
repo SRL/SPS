@@ -284,7 +284,7 @@ end;
 // Walks the path "Path"; always walks to the furthest point possible
 function SPS_WalkPath(Path: TPointArray): boolean;
 var
-  I, H, T: integer;
+  I, H, T, D: integer;
   P, MM: TPoint;
 begin
   H := High(Path);
@@ -298,11 +298,18 @@ begin
     begin
       MM.X := MMCX + Path[I].X - P.X;
       MM.Y := MMCY + Path[I].Y - P.Y;
-      if (Distance(MM.X, MM.Y, MMCX, MMCY) < 70) then
-      begin
-        MouseFlag(MM.X, MM.Y, 0, 0, Integer(I<>H)*15);
-        T := getSystemTime + 20000 + Random(1000);
- 	      Break;
+
+      D := Distance(MM.X, MM.Y, MMCX, MMCY);
+
+      if (D < 10) then
+        break
+      else begin
+        if (D < 70) then
+        begin
+          MouseFlag(MM.X, MM.Y, 0, 0, Integer(I<>H)*15);
+          T := getSystemTime + 20000 + Random(1000);
+ 	        Break;
+        end;
       end;
     end;
     Result := (I = H);
