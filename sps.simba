@@ -50,7 +50,7 @@ begin
         FactorY     := 400;
         TileOffsetX := 2045.3;
         TileOffSetY := 4159.2;
-        Tolerance   := 0.3;
+        Tolerance   := 0.2;
       end;
 
     DUNGEON_ESSENCE_MINE:
