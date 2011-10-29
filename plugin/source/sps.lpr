@@ -9,12 +9,14 @@ type
   T3DIntegerArray = array of T2DIntegerArray;
   T4DIntegerArray = array of T3DIntegerArray;
 
-function SPS_ColorBoxesMatchInline(B1, B2: TIntegerArray; tol: extended): boolean; inline;
+function SPS_ColorBoxesMatchInline(var B1, B2: TIntegerArray; tol: extended): boolean; inline;
 var
   oneMinusTol, tolPlusOne: extended;
 begin
   oneMinusTol := 1 - tol;
   tolPlusOne := tol + 1;
+  if ((Length(B1) < 3) or (Length(B2) < 3)) then
+    exit(false);
   Result := ((B1[0] >= Round(B2[0] * oneMinusTol)) and
              (B1[0] <= Round(B2[0] * tolPlusOne))) and
             ((B1[1] >= Round(B2[1] * oneMinusTol)) and
@@ -23,7 +25,7 @@ begin
              (B1[2] <= Round(B2[2] * tolPlusOne)));
 end;
 
-function SPS_ColorBoxesMatch(B1, B2: TIntegerArray; tol: extended): boolean; register;
+function SPS_ColorBoxesMatch(var B1, B2: TIntegerArray; tol: extended): boolean; register;
 begin
   Result := SPS_ColorBoxesMatchInline(B1, B2, tol);
 end;
@@ -35,16 +37,15 @@ var
 begin
   SetLength(Result, 3);
   width := bmp.Width; // may not be necessary, but should help a bit.
-
-  for x := (x1 + 4) downto x1 do    // flipped these to downto since order is irrelevant
-    for y := (y1 + 4) downto y1 do  // downto will calc the initial only once rather than each time.
+  if not bmp.PointInBitmap(x1+4,y1+4) then
+    exit;
+  for y := (y1 + 4) downto y1 do  // y first, to make optimal use of the cache!
+    for x := (x1 + 4) downto x1 do    // downto is 'faster'
     begin
-      try
         C := bmp.FData[y * width + x];
         Result[0] := Result[0] + C.R;
         Result[1] := Result[1] + C.G;
         Result[2] := Result[2] + C.B;
-      except end;
     end;
 end;
 
@@ -52,8 +53,8 @@ function SPS_BitmapToMap(bmp: TMufasaBitmap): T3DIntegerArray; register;
 var
   X, Y, HighX, HighY: integer;
 begin
-  HighX := Trunc(bmp.Width / (5.0));
-  HighY := Trunc(bmp.Height / (5.0));
+  HighX := bmp.Width div 5; //Integer division truncs automatically.
+  HighY := bmp.Height div 5;
 
   SetLength(Result, HighX);
   for X := 0 to HighX - 1 do
@@ -66,7 +67,7 @@ begin
   end;
 end;
 
-function SPS_FindMapInMapEx(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended): integer; register;
+function SPS_FindMapInMapEx(var fx, fy: integer;var LargeMap: T4DIntegerArray;var SmallMap: T3DIntegerArray; tol: extended): integer; register;
 var
   x, y, HighX, HighY, cm, L: integer;
   xx, yy: integer;
@@ -83,8 +84,10 @@ begin
   for cm := 0 to L-1 do
   begin
     HighX := High(LargeMap[cm]) - 19;
-    HighY := High(LargeMap[cm][0]) - 19;
+//    HighY := High(LargeMap[cm][0]) - 19; //Are you sure this is valid for all entries?
     for x := 0 to HighX do
+    begin
+      HighY := High(LargeMap[cm][x]) - 19; //Are you sure this is valid for all entries?
       for y := 0 to HighY do
       begin
         Matching := 0;
@@ -103,6 +106,7 @@ begin
           fY := y;
         end;
       end;
+    end;
   end;
 
   if (Result > -1) then
@@ -155,12 +159,12 @@ begin
   case x of
     0: begin
         ProcAddr := @SPS_ColorBoxesMatch;
-        StrPCopy(ProcDef, 'function SPS_ColorBoxesMatch(B1, B2: TIntegerArray; tol: extended): boolean;');
+        StrPCopy(ProcDef, 'function SPS_ColorBoxesMatch(var B1, B2: TIntegerArray; tol: extended): boolean;');
       end;
     1:
       begin
         ProcAddr := @SPS_FindMapInMapEx;
-        StrPCopy(ProcDef, 'function SPS_FindMapInMapEx(var fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended): integer;');
+        StrPCopy(ProcDef, 'function SPS_FindMapInMapEx(var fx, fy: integer; var LargeMap: T4DIntegerArray;var SmallMap: T3DIntegerArray; tol: extended): integer;');
       end;
     2:
       begin
