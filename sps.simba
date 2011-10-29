@@ -83,14 +83,14 @@ var
   c: TClient;
 begin
   try
-    bmp := TMufasaBitmap.Create;
+{    bmp := TMufasaBitmap.Create;
     bmp.SetSize(100, 100);
-
     c := getTClient;
     bmp.CopyClientToBitmap(
         c.IOManager, false, 0,0, MMCX-50, MMCY-50, MMCX+50, MMCY+50
       );
-
+}
+    bmp := GetMufasaBitmap(BitmapFromClient(MMCX-50, MMCY-50, MMCX+50, MMCY+50));
     Result := SPS_BitmapToMap(bmp);
   finally
     bmp.free;
