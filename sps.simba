@@ -28,7 +28,7 @@ type
 
 // SPS Global variables
 var
-  SPS_Loaded, SPS_Debug, SPS_Terminate: boolean;
+  SPS_Loaded, SPS_Debug, SPS_Continue: boolean;
   SPS_Areas: TStringArray;
   SPS_Surface: TSPSSurface;
   SPS_Worldmap: T4DIntegerArray;
@@ -96,7 +96,7 @@ begin
     bmp.free;
   except
     Writeln('[ERROR] GATHERMINIMAP:: '+ExceptionToString(ExceptionType, ExceptionParam));
-    if (SPS_Terminate) then
+    if (not SPS_Continue) then
     begin
       ShowMessage('SPS: Access Violation ' + #10+#13+#10+#13+
         'Please run Simba as an administrator by right clicking and ' + #10+#13+
