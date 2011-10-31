@@ -28,7 +28,7 @@ type
 
 // SPS Global variables
 var
-  SPS_Loaded, SPS_Debug: boolean;
+  SPS_Loaded, SPS_Debug, SPS_Terminate: boolean;
   SPS_Areas: TStringArray;
   SPS_Surface: TSPSSurface;
   SPS_Worldmap: T4DIntegerArray;
@@ -50,7 +50,7 @@ begin
         FactorY     := 400;
         TileOffsetX := 2045.3;
         TileOffSetY := 4159.2;
-        Tolerance   := 0.2;
+        Tolerance   := 0.25;
       end;
 
     DUNGEON_ESSENCE_MINE:
@@ -96,6 +96,14 @@ begin
     bmp.free;
   except
     Writeln('[ERROR] GATHERMINIMAP:: '+ExceptionToString(ExceptionType, ExceptionParam));
+    if (SPS_Terminate) then
+    begin
+      ShowMessage('SPS: Access Violation ' + #10+#13+#10+#13+
+        'Please run Simba as an administrator by right clicking and ' + #10+#13+
+        'choosing "Run as administrator.  You may also have to restart ' + #10+#13+
+        'Simba a few times.  ' + #10+#13+#10+#13+'Sorry for the inconvenience.');
+      TerminateScript();
+    end;
   end;
 end;
 
