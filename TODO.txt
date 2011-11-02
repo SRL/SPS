@@ -1,10 +1,4 @@
 SPS TO-DO List
 ~~~~~~~~~~~~~~
 
--- faster path walking
-
 -- access violation fix
-
--- script to automatically:
-   -- create world map @ 100% zoom
-   -- get SPS areas based on a given path

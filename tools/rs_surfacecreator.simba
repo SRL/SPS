@@ -1,0 +1,267 @@
+(*
+
+  This is a program that will automatically create the entire Runescape map from
+  in game screenshots.  The final image will be saved as a .bmp and saved to
+  the PATH_MAP constant file path.
+
+  NOTES:
+  ~~~~~~
+
+    * Takes approx. 2 minutes to complete
+    * If you're using SMART, start with the map CLOSED
+    * If you're not using SMART, you can start with it open OR closed
+    * ALWAYS start logged in; it won't login for you
+    * Reccommend running on a bad account as it uses exact coord clicking
+
+  CREDITS:
+  ~~~~~~~~
+
+    * Coh3n ~ Original author
+    * Nava2 & masterBB ~ Logic help + memory adjustments
+*)
+
+program new;
+{$DEFINE SMART}
+{$i srl/srl.scar}
+
+const
+  PATH_MAP = appPath + 'runescape_surface.bmp';
+
+  // used so the screenshots line up properly
+  OVERLAP_X = 54;
+  OVERLAP_Y = 51;
+
+  OVERLAP_EDGE_X = 399 - OVERLAP_X; // overlap for last column
+  OVERLAP_EDGE_Y = 255 - OVERLAP_Y; // last row
+
+  COLUMNS = 14; // x
+  ROWS    = 17; // y
+
+  //COLUMNS = 2;
+  //ROWS    = 2;
+
+  // used to get rid of the border, X, and legend
+  SIZE_BORDER = 167;
+  SIZE_LEGEND = 50;
+
+var
+  bmpWorld: TMufasaBitmap;
+
+// returns true if the world map is open
+function mapOpen(): boolean;
+begin
+  result := (getColor(749, 467) = 657930);
+end;
+
+// opens the world map
+function openMap(): boolean;
+var
+  x, y: integer;
+begin
+  if (findColorTolerance(x, y, 14802090, 510, 120, 565, 165, 5)) then
+    mouse(x, y, 5, 5, true);
+
+  result := waitFunc(@mapOpen, 500, 15000);
+
+  if (result) then
+    while (countColorTolerance(0, 10, 10, 100, 100, 10) > 500) do
+      wait(100);
+end;
+
+// opens the overview minimap while the map is open
+function openOverview(): boolean;
+begin
+  if (getColor(729, 453) = clBlack) then
+  begin
+    result := true;
+    exit;
+  end;
+
+  mouse(680, 480, 5, 5, true);
+  wait(200 + random(300));
+  result := true;
+end;
+
+// sets the map zoom to 100% (SPS won't work properly without it)
+procedure set100Percent();
+var
+  x, y: integer;
+begin
+  if (findText(x, y, '100', statChars, 700, 460, 760, 495)) then
+    exit;
+
+  mouse(750, 475, 2, 2, true);
+end;
+
+// will go to any position on the world map
+// number of columns and rows can be found as constants at the top of the script
+procedure goPosition(column, row: integer);
+var
+  topLeft: TPoint;
+begin
+  // starting point (top left)
+  topLeft.x := 616;
+  topLeft.y := 324;
+{
+  // used for testing (gather a small area)
+  topLeft.x := 655;
+  topLeft.y := 375;
+}
+  if (column = COLUMNS - 1) and (row = ROWS - 1) then
+  begin
+    mouse(752, 448, 0, 0, true); // bottom right corner
+    exit;
+  end;
+
+  if (column = COLUMNS - 1) then
+  begin
+    mouse(752, topLeft.y + (8 * row), 0, 0, true); // x-coord for right edge
+    exit;
+  end;
+
+  if (row = ROWS - 1) then
+  begin
+    mouse(topLeft.x + (11 * column), 448, 0, 0, true); // y-coord for bottom edge
+    exit;
+  end;
+
+  mouse(topLeft.x + (11 * column), topLeft.y + (8 * row), 0, 0, true);
+end;
+
+
+// values to cut off each side of the map's border
+const
+  LEFT   = 7;
+  RIGHT  = 160;
+  TOP    = 7;
+  BOTTOM = 43;
+// returns the cropped screenshot of the map
+function getPiece(): integer;
+var
+  w, h: integer;
+begin
+  getClientDimensions(w, h);
+  result := createBitmap(w, h);
+
+  copyClientToBitmap(result, LEFT, TOP, w - RIGHT, h - BOTTOM);
+  //saveBitmap(result, appPath + 'sps_test.bmp');
+end;
+
+// returns the current map piece as a TMufasaBitmap
+function getMufaPiece(): TMufasaBitmap;
+var
+  bmp: integer;
+begin
+  bmp := getPiece();
+  result := getMufasaBitmap(bmp);
+end;
+
+// gathers all the map pieces and draws them to the bmpWorld bitmap
+procedure setPieces();
+var
+  bmp: TMufasaBitmap;
+  x, y, w, h: integer;
+  drawn: boolean;
+begin
+  writeln('Creating map.. this may take a couple minutes');
+
+  getClientDimensions(w, h);
+
+  w := (w - SIZE_BORDER - OVERLAP_X);
+  h := (h - SIZE_LEGEND - OVERLAP_Y);
+
+  for x := 0 to (COLUMNS - 1) do
+  begin
+    goPosition(x, 0);
+
+    for y := 0 to (ROWS - 1) do
+    begin
+      drawn := false;
+
+      if (y > 0) then
+        goPosition(x, y);
+
+      bmp := getMufaPiece();
+
+      // bottom right corner
+      if (x = COLUMNS - 1) and (y = ROWS - 1) then
+      begin
+        bmp.fastDrawTransparent(x * w - OVERLAP_EDGE_X, y * h - OVERLAP_EDGE_Y, bmpWorld);
+        drawn := true;
+      end;
+
+      // right edge
+      if (x = COLUMNS - 1) then
+      begin
+        bmp.fastDrawTransparent(x * w - OVERLAP_EDGE_X, y * h, bmpWorld);
+        drawn := true;
+      end;
+
+      // bottom edge
+      if (y = ROWS - 1) then
+      begin
+        bmp.fastDrawTransparent(x * w, y * h - OVERLAP_EDGE_Y, bmpWorld);
+        drawn := true;
+      end;
+
+      if (not drawn) then
+        bmp.fastDrawTransparent(x * w, y * h, bmpWorld);
+
+      bmp.free();
+    end;
+  end;
+end;
+
+// creates the world map
+procedure createMap();
+var
+  w, h: integer;
+begin
+  bmpWorld := TMufasaBitmap.create();
+  getClientDimensions(w, h);
+
+  w := (w - SIZE_BORDER - OVERLAP_X);
+  h := (h - SIZE_LEGEND - OVERLAP_Y);
+
+  writeln(toStr(w * COLUMNS));
+  writeln(toStr(h * ROWS));
+
+  bmpWorld.setSize(w * COLUMNS - OVERLAP_EDGE_X, h * ROWS - OVERLAP_EDGE_Y);
+  bmpWorld.fastDrawClear(clBlack); // transparent colour
+
+  setPieces()
+end;
+
+procedure mainloop();
+var
+  t: integer;
+begin
+  t := getSystemTime();
+
+  if (not mapOpen()) then
+    openMap();
+
+  set100Percent();
+  openOverview();
+
+  createMap();
+  bmpWorld.saveToFile(PATH_MAP);
+  bmpWorld.free();
+
+  writeln('Took '+msToTime(getSystemTime - t, TIME_SHORT)+' to complete.');
+end;
+
+begin
+  {$IFDEF SMART}
+  SMART_Server := 152;
+  SMART_Members := False;
+  SMART_Signed := True;
+  SMART_SuperDetail := False;
+  {$ENDIF}
+
+  clearDebug();
+  activateClient();
+  setupSRL();
+
+  mainloop();
+end.
