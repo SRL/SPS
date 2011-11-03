@@ -128,31 +128,21 @@ begin
   mouse(topLeft.x + (11 * column), topLeft.y + (8 * row), 0, 0, true);
 end;
 
-
 // values to cut off each side of the map's border
 const
-  LEFT   = 7;
-  RIGHT  = 160;
-  TOP    = 7;
-  BOTTOM = 43;
-// returns the cropped screenshot of the map
-function getPiece(): integer;
-var
-  w, h: integer;
-begin
-  getClientDimensions(w, h);
-  result := createBitmap(w, h);
-
-  copyClientToBitmap(result, LEFT, TOP, w - RIGHT, h - BOTTOM);
-  //saveBitmap(result, appPath + 'sps_test.bmp');
-end;
-
-// returns the current map piece as a TMufasaBitmap
+  LEFT   = 7;   // left border
+  RIGHT  = 160; // right border + overview map
+  TOP    = 7;   // top border
+  BOTTOM = 43;  // bottom legend
+// returns the current cropped map piece as a TMufasaBitmap
 function getMufaPiece(): TMufasaBitmap;
 var
-  bmp: integer;
+  bmp, w, h: integer;
 begin
-  bmp := getPiece();
+  getClientDimensions(w, h);
+  bmp := createBitmap(w, h);
+  copyClientToBitmap(bmp, LEFT, TOP, w - RIGHT, h - BOTTOM);
+
   result := getMufasaBitmap(bmp);
 end;
 
@@ -171,15 +161,10 @@ begin
   h := (h - SIZE_LEGEND - OVERLAP_Y);
 
   for x := 0 to (COLUMNS - 1) do
-  begin
-    goPosition(x, 0);
-
     for y := 0 to (ROWS - 1) do
     begin
       drawn := false;
-
-      if (y > 0) then
-        goPosition(x, y);
+      goPosition(x, y);
 
       bmp := getMufaPiece();
 
@@ -209,7 +194,6 @@ begin
 
       bmp.free();
     end;
-  end;
 end;
 
 // creates the world map
@@ -253,7 +237,7 @@ end;
 
 begin
   {$IFDEF SMART}
-  SMART_Server := 152;
+  SMART_Server := 1;
   SMART_Members := False;
   SMART_Signed := True;
   SMART_SuperDetail := False;
