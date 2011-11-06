@@ -6,8 +6,6 @@ Concept and original work done by marpis @ SRL-Forums.
 
 *)
 
-{$loadlib sps} // Load the sps library
-
 const
   // Path where all the SPS files are
   SPS_IMG_PATH   = IncludePath + 'SPS\img\';
@@ -16,6 +14,7 @@ const
   // Supported SPS surfaces
   RUNESCAPE_SURFACE    = 1;
   DUNGEON_ESSENCE_MINE = 2;
+  DWARVEN_MINE         = 3;
 
 type
   TSPSSurface = record
@@ -44,7 +43,6 @@ begin
       with SPS_Surface do
       begin
         Name        := 'Runescape Surface';
-        Constant    := RUNESCAPE_SURFACE;
         ImagePath   := SPS_IMG_PATH + 'runescape_surface\';
         FactorX     := 400;
         FactorY     := 400;
@@ -57,7 +55,6 @@ begin
       with SPS_Surface do
       begin
         Name        := 'Essence Mine';
-        Constant    := DUNGEON_ESSENCE_MINE;
         ImagePath   := SPS_IMG_PATH + 'essence_mine\';
         FactorX     := 400;
         FactorY     := 1;
@@ -65,7 +62,21 @@ begin
         TileOffSetY := -1;
         Tolerance   := 0.5;
       end;
+
+    DWARVEN_MINE:
+      with SPS_Surface do
+      begin
+        Name        := 'Dwarven Mine';
+        ImagePath   := SPS_IMG_PATH + 'dwarven_mine\';
+        FactorX     := 400;
+        FactorY     := 1;
+        TileOffsetX := -1;
+        TileOffSetY := -1;
+        Tolerance   := 0.2;
+      end;
   end;
+
+  SPS_Surface.Constant := surface;
 
   if (SPS_Debug) then
   begin

@@ -144,6 +144,8 @@ begin
   copyClientToBitmap(bmp, LEFT, TOP, w - RIGHT, h - BOTTOM);
 
   result := getMufasaBitmap(bmp);
+
+  //result.saveToFile(appPath + 'dwarven2.png');
 end;
 
 // gathers all the map pieces and draws them to the bmpWorld bitmap
