@@ -113,6 +113,11 @@ begin
   end;
 end;
 
+procedure SetPluginMemManager(manager: TMemoryManager);
+begin
+  SetMemoryManager(manager);
+end;
+
 //////  EXPORTING  /////////////////////////////////////////////////////////////
 
 function GetTypeCount(): Integer; stdcall; export;
