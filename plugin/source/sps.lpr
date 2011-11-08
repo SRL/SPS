@@ -115,6 +115,11 @@ end;
 
 //////  EXPORTING  /////////////////////////////////////////////////////////////
 
+procedure SetPluginMemoryManager(MemMgr : TMemoryManager); stdcall; export;
+begin
+  SetMemoryManager(MemMgr);
+end;
+
 function GetTypeCount(): Integer; stdcall; export;
 begin
   Result := 2;
@@ -173,6 +178,7 @@ begin
   Result := x;
 end;
 
+exports SetPluginMemoryManager;
 exports GetTypeCount;
 exports GetTypeInfo;
 exports GetFunctionCount;
