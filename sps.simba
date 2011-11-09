@@ -71,7 +71,7 @@ begin
         Name        := 'Dwarven Mine';
         ImagePath   := SPS_IMG_PATH + 'dwarven_mine\';
         FactorX     := 400;
-        FactorY     := 1;
+        FactorY     := 340;
         TileOffsetX := -1;
         TileOffSetY := -1;
         Tolerance   := 0.2;

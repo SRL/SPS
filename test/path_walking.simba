@@ -7,7 +7,7 @@ var
   t: integer;
   pts: TPointArray;
 begin
-  smart_server := 152;
+  smart_server := 1;
   smart_members := false;
   smart_signed := true;
   smart_superDetail := false;
@@ -17,15 +17,10 @@ begin
 
   SPS_Debug := true;
 
-  // Essence Mine East Mines
-  SPS_Setup(DUNGEON_ESSENCE_MINE, ['0_1']);
-  pts := [ point(298, 191), point(266, 223), point(248, 243),
-           point(267, 273), point(300, 295) ];
-{
-  // Aubury to VE Bank
-  SPS_Setup(RUNESCAPE_SURFACE, ['11_7']);
-  pts := [ point(4830, 3030), point(4850, 3000), point(4830, 2950) ];
-}
+
+  SPS_Setup(DWARVEN_MINE, ['0_1']);
+  pts := [Point(278, 506), Point(329, 509), Point(359, 489), Point(392, 483)];
+
   repeat
     inc(t);
 
