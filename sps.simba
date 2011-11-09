@@ -6,6 +6,8 @@ Concept and original work done by marpis @ SRL-Forums.
 
 *)
 
+{$loadlib sps}
+
 const
   // Path where all the SPS files are
   SPS_IMG_PATH   = IncludePath + 'SPS\img\';
