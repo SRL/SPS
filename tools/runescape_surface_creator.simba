@@ -1,0 +1,344 @@
+(*
+
+  This is a program that will automatically create the entire Runescape map from
+  in game screenshots.  The final image will be saved to the PATH_MAP
+  constant file path.  It will also split the map into 500x500 chunks used as
+  SPS areas.  Each area overlaps by 100 pixels.  Set the MAP_CREATE and
+  MAP_SLICE constants depending on which (or both) activities you want to do.
+
+  NOTES:
+  ~~~~~~
+
+    * Takes approx. 2 minutes to complete the map; 5 seconds to slice it
+    * If you're using SMART, start with the map CLOSED
+    * If you're not using SMART, you can start with it open OR closed
+    * ALWAYS start logged in; it won't login for you
+    * Reccommend running on a bad account as it uses exact coord clicking
+    * Doesn't require you to login if you're only slicing the map
+
+  CREDITS:
+  ~~~~~~~~
+
+    * Coh3n ~ Original author
+    * Nava2 & masterBB ~ Logic help + memory adjustments
+    * Marpis ~ Original map slicing algorithm
+
+*)
+
+program runescape_surface_creator;
+{$DEFINE SMART}
+{$i srl/srl.scar}
+
+const
+  MAP_CREATE = false; // true to create the map
+  MAP_SLICE  = true;  // true to slice the map into areas
+
+const
+  PATH_MAP = appPath + 'runescape_surface\runescape_surface.bmp'; // where to save the world map
+  PATH_IMG = appPath + 'runescape_surface\';                      // where to save the sps areas
+
+  // used so the screenshots line up properly
+  OVERLAP_X = 54;
+  OVERLAP_Y = 51;
+
+  OVERLAP_EDGE_X = 399 - OVERLAP_X; // overlap for last column
+  OVERLAP_EDGE_Y = 255 - OVERLAP_Y; // last row
+
+  COLUMNS = 14; // x
+  ROWS    = 17; // y
+
+  //COLUMNS = 2;
+  //ROWS    = 2;
+
+  // used to get rid of the border, X, and legend
+  SIZE_BORDER = 167;
+  SIZE_LEGEND = 50;
+
+var
+  bmpWorld: TMufasaBitmap;
+
+// returns true if the world map is open
+function mapOpen(): boolean;
+begin
+  result := (getColor(749, 467) = 657930);
+end;
+
+// opens the world map
+function openMap(): boolean;
+var
+  x, y: integer;
+begin
+  if (findColorTolerance(x, y, 14802090, 510, 120, 565, 165, 5)) then
+    mouse(x, y, 5, 5, true);
+
+  result := waitFunc(@mapOpen, 500, 15000);
+
+  if (result) then
+    while (countColorTolerance(0, 10, 10, 100, 100, 10) > 500) do
+      wait(100);
+end;
+
+// opens the overview minimap while the map is open
+function openOverview(): boolean;
+begin
+  if (getColor(729, 453) = clBlack) then
+  begin
+    result := true;
+    exit;
+  end;
+
+  mouse(680, 480, 5, 5, true);
+  wait(200 + random(300));
+  result := true;
+end;
+
+// sets the map zoom to 100% (SPS won't work properly without it)
+procedure set100Percent();
+var
+  x, y: integer;
+begin
+  if (findText(x, y, '100', statChars, 700, 460, 760, 495)) then
+    exit;
+
+  mouse(750, 475, 2, 2, true);
+end;
+
+// will go to any position on the world map
+// number of columns and rows can be found as constants at the top of the script
+procedure goPosition(column, row: integer);
+var
+  topLeft: TPoint;
+begin
+  // starting point (top left)
+  topLeft.x := 616;
+  topLeft.y := 324;
+{
+  // used for testing (gather a small area)
+  topLeft.x := 655;
+  topLeft.y := 375;
+}
+  if (column = COLUMNS - 1) and (row = ROWS - 1) then
+  begin
+    mouse(752, 448, 0, 0, true); // bottom right corner
+    exit;
+  end;
+
+  if (column = COLUMNS - 1) then
+  begin
+    mouse(752, topLeft.y + (8 * row), 0, 0, true); // x-coord for right edge
+    exit;
+  end;
+
+  if (row = ROWS - 1) then
+  begin
+    mouse(topLeft.x + (11 * column), 448, 0, 0, true); // y-coord for bottom edge
+    exit;
+  end;
+
+  mouse(topLeft.x + (11 * column), topLeft.y + (8 * row), 0, 0, true);
+end;
+
+// values to cut off each side of the map's border
+const
+  LEFT   = 7;   // left border
+  RIGHT  = 160; // right border + overview map
+  TOP    = 7;   // top border
+  BOTTOM = 43;  // bottom legend
+// returns the current cropped map piece as a TMufasaBitmap
+function getMufaPiece(): TMufasaBitmap;
+var
+  bmp, w, h: integer;
+begin
+  getClientDimensions(w, h);
+  bmp := createBitmap(w, h);
+  copyClientToBitmap(bmp, LEFT, TOP, w - RIGHT, h - BOTTOM);
+
+  result := getMufasaBitmap(bmp);
+
+  //result.saveToFile(appPath + 'dwarven2.png');
+end;
+
+// gathers all the map pieces and draws them to the bmpWorld bitmap
+procedure setPieces();
+var
+  bmp: TMufasaBitmap;
+  x, y, w, h: integer;
+  drawn: boolean;
+begin
+  writeln('Creating map.. this may take a couple minutes');
+
+  getClientDimensions(w, h);
+
+  w := (w - SIZE_BORDER - OVERLAP_X);
+  h := (h - SIZE_LEGEND - OVERLAP_Y);
+
+  for x := 0 to (COLUMNS - 1) do
+    for y := 0 to (ROWS - 1) do
+    begin
+      drawn := false;
+      goPosition(x, y);
+
+      bmp := getMufaPiece();
+
+      // bottom right corner
+      if (x = COLUMNS - 1) and (y = ROWS - 1) then
+      begin
+        bmp.fastDrawTransparent(x * w - OVERLAP_EDGE_X, y * h - OVERLAP_EDGE_Y, bmpWorld);
+        drawn := true;
+      end;
+
+      // right edge
+      if (x = COLUMNS - 1) then
+      begin
+        bmp.fastDrawTransparent(x * w - OVERLAP_EDGE_X, y * h, bmpWorld);
+        drawn := true;
+      end;
+
+      // bottom edge
+      if (y = ROWS - 1) then
+      begin
+        bmp.fastDrawTransparent(x * w, y * h - OVERLAP_EDGE_Y, bmpWorld);
+        drawn := true;
+      end;
+
+      if (not drawn) then
+        bmp.fastDrawTransparent(x * w, y * h, bmpWorld);
+
+      bmp.free();
+    end;
+end;
+
+// creates the world map
+procedure createMap();
+var
+  w, h: integer;
+begin
+  bmpWorld := TMufasaBitmap.create();
+  getClientDimensions(w, h);
+
+  w := (w - SIZE_BORDER - OVERLAP_X);
+  h := (h - SIZE_LEGEND - OVERLAP_Y);
+
+  bmpWorld.setSize(w * COLUMNS - OVERLAP_EDGE_X, h * ROWS - OVERLAP_EDGE_Y);
+  bmpWorld.fastDrawClear(clBlack); // transparent colour
+
+  setPieces()
+end;
+
+// splits the map into SPS areas 500x500 pixels; overlap 100 pixels on each side
+// finished in about 10 seconds
+procedure sliceMap;
+var
+  bmpMap, bmpTemp: TMufasaBitmap;
+  x, y, i, t, x1, y1, x2, y2: integer;
+  blanks: TStringArray;
+begin
+  writeln('Slicing map...');
+  t := getSystemTime();
+
+  // SPS areas that don't have any land on them (no point in saving them)
+  blanks := ['0_0', '0_4', '0_5', '0_6', '0_7', '0_8', '0_14', '0_15', '0_16',
+    '1_0', '1_4', '1_6', '1_14', '1_15', '1_16', '2_0', '2_1', '2_14', '2_15',
+    '2_16', '3_0', '3_1', '3_14', '3_15', '3_16', '4_0', '4_1', '4_14', '4_15',
+    '4_16', '3_14', '3_15', '3_16', '7_0', '8_0', '8_13', '9_0', '9_13', '9_14',
+    '9_15', '9_16', '10_0', '10_13', '10_14', '10_15', '10_16', '11_0', '11_15',
+    '11_16', '12_0', '12_15', '12_16', '13_0', '13_15', '13_16', '14_0', '14_1',
+    '14_2', '14_14', '14_15', '14_16', '15_0', '15_1', '15_2', '15_3', '15_4',
+    '15_13', '15_14', '15_15', '15_16', '16_0', '16_1', '16_2', '16_3', '16_4',
+    '16_13', '16_14', '16_15', '16_16', '17_0', '17_1', '17_2', '17_3', '17_4',
+    '17_7', '17_8', '17_9', '17_14', '17_15', '17_16'];
+
+  forceDirectories(PATH_IMG);
+
+  bmpMap := TMufasaBitmap.Create();
+  bmpMap.loadFromFile(PATH_MAP);
+
+  for x := 0 to 17 do
+    for y := 0 to 16 do
+    begin
+      // skips blank areas
+      if (inStrArr(toStr(x)+'_'+toStr(y), blanks, false)) then
+        continue;
+
+      x1 := (x * 400);
+      y1 := (y * 400);
+      x2 := (x * 400 + 499);
+      y2 := (y * 400 + 499);
+
+      // make sure we're not exceeding the dimensions of the world map
+      // if we are set the coords so the areas are still 500x500
+      if (x2 > bmpMap.width) then
+      begin
+        x1 := (bmpMap.width - 1 - 499);
+        x2 := (bmpMap.width - 1);
+      end;
+
+      if (y2 > bmpMap.height) then
+      begin
+        y1 := (bmpMap.height - 1 - 499);
+        y2 := (bmpMap.height - 1);
+      end;
+
+      bmpTemp := bmpMap.copy(x1, y1, x2, y2);
+      bmpTemp.saveToFile(PATH_IMG + toStr(x)+'_'+toStr(y)+'.bmp');
+      bmpTemp.free();
+
+      inc(i);
+      writeln('Saved '+toStr(i));
+    end;
+
+  bmpMap.free();
+  writeln('Slicing map took '+msToTime(getSystemTime - t, TIME_SHORT)+' to complete.');
+end;
+
+procedure mainloopMap();
+var
+  t: integer;
+begin
+  t := getSystemTime();
+
+  if (not mapOpen()) then
+    openMap();
+
+  set100Percent();
+  openOverview();
+
+  createMap();
+  bmpWorld.saveToFile(PATH_MAP);
+  bmpWorld.free();
+
+  writeln('Creating map took '+msToTime(getSystemTime - t, TIME_SHORT)+' to complete.');
+end;
+
+procedure mainloopSlice();
+begin
+  sliceMap();
+end;
+
+begin
+  clearDebug();
+
+  if (MAP_CREATE) then
+  begin
+    {$IFDEF SMART}
+    SMART_Server := 1;
+    SMART_Members := False;
+    SMART_Signed := True;
+    SMART_SuperDetail := False;
+    {$ENDIF}
+
+    activateClient();
+    setupSRL();
+
+    if (not(loggedIn)) then
+    begin
+      writeln('Please login your player');
+      terminateScript();
+    end;
+
+    mainloopMap();
+  end;
+
+  if (MAP_SLICE) then
+    mainloopSlice();
+end.

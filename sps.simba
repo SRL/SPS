@@ -74,7 +74,7 @@ begin
         FactorY     := 340;
         TileOffsetX := -1;
         TileOffSetY := -1;
-        Tolerance   := 0.2;
+        Tolerance   := 0.1;
       end;
   end;
 
@@ -233,7 +233,7 @@ begin
         [getSystemTime - t, toStr(result)]));
 
   except
-    Writeln('[SPS] ERROR' + ExceptionToString(ExceptionType, ExceptionParam));
+    Writeln('[SPS] ERROR in SPS_GetMyPos: ' + ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 

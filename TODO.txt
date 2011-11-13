@@ -1,4 +1,9 @@
 SPS TO-DO List
 ~~~~~~~~~~~~~~
 
--- access violation fix
+-- Add more dungeons
+-- Not have to set SPS_Areas
+-- ** Work from any compass angle
+-- World walker
+
+** = Priority
