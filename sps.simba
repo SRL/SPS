@@ -17,6 +17,7 @@ const
   RUNESCAPE_SURFACE    = 1;
   DUNGEON_ESSENCE_MINE = 2;
   DWARVEN_MINE         = 3;
+  RUNECRAFTING_ALTERS  = 4;
 
 type
   TSPSSurface = record
@@ -48,8 +49,8 @@ begin
         ImagePath   := SPS_IMG_PATH + 'runescape_surface\';
         FactorX     := 400;
         FactorY     := 400;
-        TileOffsetX := 2045.3;
-        TileOffSetY := 4159.2;
+        TileOffsetX := -1;
+        TileOffSetY := -1;
         Tolerance   := 0.25;
       end;
 
@@ -76,6 +77,18 @@ begin
         TileOffSetY := -1;
         Tolerance   := 0.1;
       end;
+
+    RUNECRAFTING_ALTERS:
+      with SPS_Surface do
+      begin
+        Name        := 'Runecrafting Alters';
+        ImagePath   := SPS_IMG_PATH + 'runecrafting_alters\';
+        FactorX     := 400;
+        FactorY     := 340;
+        TileOffsetX := -1;
+        TileOffSetY := -1;
+        Tolerance   := 0.1;
+      end;
   end;
 
   SPS_Surface.Constant := surface;
@@ -87,6 +100,18 @@ begin
   end;
 
   SPS_Loaded := false;
+end;
+
+procedure SPS_WarnUser(proc, error: string);
+begin
+  if (not SPS_Continue) then
+  begin
+    ShowMessage('SPS: ' + error + ' in ' + proc + #10+#13+#10+#13+
+      'Please run Simba as an administrator by right clicking and ' + #10+#13+
+      'choosing "Run as administrator."  You may also have to restart ' + #10+#13+
+      'Simba a few times.  ' + #10+#13+#10+#13+'Sorry for the inconvenience.');
+    TerminateScript();
+  end;
 end;
 
 // Gets the map pieces that appear on the minimap
@@ -108,15 +133,8 @@ begin
   finally
     bmp.free;
   except
-    Writeln('[ERROR] GATHERMINIMAP:: '+ExceptionToString(ExceptionType, ExceptionParam));
-    if (not SPS_Continue) then
-    begin
-      ShowMessage('SPS: Access Violation ' + #10+#13+#10+#13+
-        'Please run Simba as an administrator by right clicking and ' + #10+#13+
-        'choosing "Run as administrator.  You may also have to restart ' + #10+#13+
-        'Simba a few times.  ' + #10+#13+#10+#13+'Sorry for the inconvenience.');
-      TerminateScript();
-    end;
+    Writeln('[ERROR] in SPS_GatherMinimap: '+ExceptionToString(ExceptionType, ExceptionParam));
+    SPS_WarnUser('SPS_GatherMinimap', ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 
@@ -181,6 +199,7 @@ begin
       img.free;
     except
       Writeln('[SPS] ERROR: SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
+      SPS_WarnUser('SPS_Load', ExceptionToString(ExceptionType, ExceptionParam));
     end;
   end;
 
@@ -234,12 +253,21 @@ begin
 
   except
     Writeln('[SPS] ERROR in SPS_GetMyPos: ' + ExceptionToString(ExceptionType, ExceptionParam));
+    SPS_WarnUser('SPS_GetMyPos', ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 
 // Converts an SPS pos to a tile
 function SPS_PosToTile(pos: TPoint): TPoint;
 begin
+  result := point(-1, -1);
+
+  if (SPS_Surface.TileOffsetX = -1) then
+  begin
+    writeln('No conversion available for ' + SPS_Surface.Name);
+    exit;
+  end;
+
   result.X := round(SPS_Surface.TileOffsetX + (pos.x / 4));
   result.Y := round(SPS_Surface.TileOffsetY - (pos.y / 4));
 end;
@@ -247,6 +275,14 @@ end;
 // Converts a tile to and SPS point, or "pos"
 function SPS_TileToPos(tile: TPoint): TPoint;
 begin
+  result := point(-1, -1);
+
+  if (SPS_Surface.TileOffsetX = -1) then
+  begin
+    writeln('No conversion available for ' + SPS_Surface.Name);
+    exit;
+  end;
+
   result.X := round((tile.x - SPS_Surface.TileOffsetX) * 4);
   result.Y := round((SPS_Surface.TileOffsetY - tile.y) * 4);
 end;
