@@ -75,7 +75,7 @@ begin
         FactorY     := 340;
         TileOffsetX := -1;
         TileOffSetY := -1;
-        Tolerance   := 0.1;
+        Tolerance   := 0.05;
       end;
 
     RUNECRAFTING_ALTERS:
