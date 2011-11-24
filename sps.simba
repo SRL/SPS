@@ -51,7 +51,7 @@ begin
         FactorY     := 400;
         TileOffsetX := -1;
         TileOffSetY := -1;
-        Tolerance   := 0.25;
+        Tolerance   := 0.3;
       end;
 
     DUNGEON_ESSENCE_MINE:
@@ -75,7 +75,7 @@ begin
         FactorY     := 340;
         TileOffsetX := -1;
         TileOffSetY := -1;
-        Tolerance   := 0.05;
+        Tolerance   := 0.5;
       end;
 
     RUNECRAFTING_ALTERS:
@@ -84,10 +84,10 @@ begin
         Name        := 'Runecrafting Alters';
         ImagePath   := SPS_IMG_PATH + 'runecrafting_alters\';
         FactorX     := 400;
-        FactorY     := 340;
+        FactorY     := 400;
         TileOffsetX := -1;
         TileOffSetY := -1;
-        Tolerance   := 0.1;
+        Tolerance   := 0.2;
       end;
   end;
 
@@ -224,7 +224,7 @@ begin
     SPS_Load;
   
   // we should just rotate the minimap according to the minimap angle.
-  if (rs_GetCompassAngleDegrees <> 0) then
+  if (inRange(round(rs_GetCompassAngleDegrees), 5, 355)) then
     ClickNorth(True);
 
   t := getSystemTime;

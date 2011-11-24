@@ -47,9 +47,6 @@ const
   COLUMNS = 14; // x
   ROWS    = 17; // y
 
-  //COLUMNS = 2;
-  //ROWS    = 2;
-
   // used to get rid of the border, X, and legend
   SIZE_BORDER = 167;
   SIZE_LEGEND = 50;
@@ -317,6 +314,7 @@ end;
 
 begin
   clearDebug();
+  forceDirectories(PATH_IMG);
 
   if (MAP_CREATE) then
   begin
@@ -330,11 +328,13 @@ begin
     activateClient();
     setupSRL();
 
+    {$IFDEF SMART}
     if (not(loggedIn)) then
     begin
       writeln('Please login your player');
       terminateScript();
     end;
+    {$ENDIF}
 
     mainloopMap();
   end;
