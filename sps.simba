@@ -17,7 +17,7 @@ const
   RUNESCAPE_SURFACE    = 1;
   DUNGEON_ESSENCE_MINE = 2;
   DWARVEN_MINE         = 3;
-  RUNECRAFTING_ALTERS  = 4;
+  RUNECRAFTING_ALTARS  = 4;
 
 type
   TSPSSurface = record
@@ -75,14 +75,14 @@ begin
         FactorY     := 340;
         TileOffsetX := -1;
         TileOffSetY := -1;
-        Tolerance   := 0.5;
+        Tolerance   := 0.35;
       end;
 
-    RUNECRAFTING_ALTERS:
+    RUNECRAFTING_ALTARS:
       with SPS_Surface do
       begin
-        Name        := 'Runecrafting Alters';
-        ImagePath   := SPS_IMG_PATH + 'runecrafting_alters\';
+        Name        := 'Runecrafting Altars';
+        ImagePath   := SPS_IMG_PATH + 'RUNECRAFTING_ALTARS\';
         FactorX     := 400;
         FactorY     := 400;
         TileOffsetX := -1;
