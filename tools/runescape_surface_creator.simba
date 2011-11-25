@@ -28,6 +28,7 @@
 program runescape_surface_creator;
 {$DEFINE SMART}
 {$i srl/srl.scar}
+{$i srl/srl/misc/paintsmart.scar}
 
 const
   MAP_CREATE = false; // true to create the map
@@ -323,6 +324,8 @@ begin
     SMART_Members := False;
     SMART_Signed := True;
     SMART_SuperDetail := False;
+    SMART_SetupDebug();
+    clearRSCanvas(SMART_Canvas.canvas);
     {$ENDIF}
 
     activateClient();
