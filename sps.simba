@@ -35,6 +35,12 @@ var
   SPS_Surface: TSPSSurface;
   SPS_Worldmap: T4DIntegerArray;
 
+procedure SPS_DebugStr(msg: string);
+begin
+  if (SPS_Debug) then
+    SPS_DebugStr('[SPS] '+msg);
+end;
+
 // Should be called in scripts to setup SPS
 // Needs to be called each time the surface changes (i.e. from runescape_surface to essence_mine)
 procedure SPS_Setup(surface: integer; areas: TStringArray);
@@ -95,8 +101,8 @@ begin
 
   if (SPS_Debug) then
   begin
-    writeln('[SPS] SPS_Surface: ' + SPS_Surface.Name);
-    writeln('[SPS] SPS_Areas: ' + toStr(SPS_Areas));
+    SPS_DebugStr('[SPS] SPS_Surface: ' + SPS_Surface.Name);
+    SPS_DebugStr('[SPS] SPS_Areas: ' + toStr(SPS_Areas));
   end;
 
   SPS_Loaded := false;
@@ -133,7 +139,7 @@ begin
   finally
     bmp.free;
   except
-    Writeln('[ERROR] in SPS_GatherMinimap: '+ExceptionToString(ExceptionType, ExceptionParam));
+    SPS_DebugStr('[ERROR] in SPS_GatherMinimap: '+ExceptionToString(ExceptionType, ExceptionParam));
     SPS_WarnUser('SPS_GatherMinimap', ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
@@ -150,8 +156,7 @@ begin
   x := StrToIntDef(copy(Area, 1, p-1), -1);
   y := StrToIntDef(copy(Area, p+1, Length(Area)-p), -1);
 
-  if (SPS_Debug) then
-    writeln(format('[SPS] Area coords (%d, %d)', [x, y]));
+  SPS_DebugStr(format('[SPS] Area coords (%d, %d)', [x, y]));
 end;
 
 // Converts a point from a map piece to a point on the entire map
@@ -175,13 +180,13 @@ begin
 
   if (L <= 0) then
   begin
-    writeln('[SPS] WARNING: SPS_Areas hasn''t been set');
+    SPS_DebugStr('[SPS] WARNING: SPS_Areas hasn''t been set');
     exit;
   end;
 
   if (SPS_Surface.Name = '') then
   begin
-    writeln('[SPS] WARNING: SPS_Surface isn''t set! Using Runescape Surface as default');
+    SPS_DebugStr('[SPS] WARNING: SPS_Surface isn''t set! Using Runescape Surface as default');
     SPS_Setup(RUNESCAPE_SURFACE, SPS_Areas);
   end;
 
@@ -198,14 +203,12 @@ begin
     finally
       img.free;
     except
-      Writeln('[SPS] ERROR: SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
+      SPS_DebugStr('[SPS] ERROR: SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
       SPS_WarnUser('SPS_Load', ExceptionToString(ExceptionType, ExceptionParam));
     end;
   end;
 
-  if (SPS_Debug) then
-    Writeln('[SPS] Maps loaded in '+ToStr(getSystemTime - timer)+'ms.');
-
+  SPS_DebugStr('[SPS] Maps loaded in '+ToStr(getSystemTime - timer)+'ms.');
   SPS_Loaded := True;
 end;
 
@@ -213,7 +216,7 @@ end;
 function SPS_GetMyPos: TPoint;
 var
   Minimap: T3DIntegerArray;
-  t, map: integer;
+  t, map, ang: integer;
 begin
   Result := Point(-1, -1);
   
@@ -224,16 +227,21 @@ begin
     SPS_Load;
   
   // we should just rotate the minimap according to the minimap angle.
-  if (inRange(round(rs_GetCompassAngleDegrees), 5, 355)) then
+  ang := round(rs_GetCompassAngleDegrees());
+  SPS_DebugStr('[SPS] Compass Angle: '+toStr(ang));
+
+  {$IFDEF SRL5}
+  ClickNorth(SRL_ANGLE_NONE);
+  {$ELSE}
+  if (inRange(ang, 10, 350)) then
     ClickNorth(True);
+  {$ENDIF}
 
   t := getSystemTime;
   Minimap := SPS_GatherMinimap;
   if (High(Minimap) < 0) then
   begin
-    if (SPS_Debug) then
-      WriteLn('[SPS] Did not gather Minimap.');
-
+    SPS_DebugStr('[SPS] Did not gather Minimap.');
     Exit;
   end;
 
@@ -247,12 +255,11 @@ begin
       Result := SPS_LocalToGlobal(SPS_Areas[map], Result.X, Result.Y);
     end;
 
-    if (SPS_Debug) then
-      writeln(format('[SPS] GetMyPos: Finished in %d ms. Location = %s',
+    SPS_DebugStr(format('[SPS] GetMyPos: Finished in %d ms. Location = %s',
         [getSystemTime - t, toStr(result)]));
 
   except
-    Writeln('[SPS] ERROR in SPS_GetMyPos: ' + ExceptionToString(ExceptionType, ExceptionParam));
+    SPS_DebugStr('[SPS] ERROR in SPS_GetMyPos: ' + ExceptionToString(ExceptionType, ExceptionParam));
     SPS_WarnUser('SPS_GetMyPos', ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
@@ -264,7 +271,7 @@ begin
 
   if (SPS_Surface.TileOffsetX = -1) then
   begin
-    writeln('No conversion available for ' + SPS_Surface.Name);
+    SPS_DebugStr('No conversion available for ' + SPS_Surface.Name);
     exit;
   end;
 
@@ -279,7 +286,7 @@ begin
 
   if (SPS_Surface.TileOffsetX = -1) then
   begin
-    writeln('No conversion available for ' + SPS_Surface.Name);
+    SPS_DebugStr('No conversion available for ' + SPS_Surface.Name);
     exit;
   end;
 
