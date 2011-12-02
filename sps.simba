@@ -230,12 +230,12 @@ begin
   ang := round(rs_GetCompassAngleDegrees());
   SPS_DebugStr('[SPS] Compass Angle: '+toStr(ang));
 
-  {$IFDEF SRL5}
-  ClickNorth(SRL_ANGLE_NONE);
-  {$ELSE}
   if (inRange(ang, 10, 350)) then
+    {$IFDEF SRL5}
+    ClickNorth(SRL_ANGLE_HIGH);
+    {$ELSE}
     ClickNorth(True);
-  {$ENDIF}
+    {$ENDIF}
 
   t := getSystemTime;
   Minimap := SPS_GatherMinimap;
