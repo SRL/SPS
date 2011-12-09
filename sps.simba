@@ -38,7 +38,7 @@ var
 procedure SPS_DebugStr(msg: string);
 begin
   if (SPS_Debug) then
-    SPS_DebugStr('[SPS] '+msg);
+    Writeln('[SPS] '+msg);
 end;
 
 // Should be called in scripts to setup SPS
