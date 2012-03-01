@@ -18,6 +18,7 @@ const
   DUNGEON_ESSENCE_MINE = 2;
   DWARVEN_MINE         = 3;
   RUNECRAFTING_ALTARS  = 4;
+  DOMINION_TOWER       = 5;
 
 type
   TSPSSurface = record
@@ -88,12 +89,24 @@ begin
       with SPS_Surface do
       begin
         Name        := 'Runecrafting Altars';
-        ImagePath   := SPS_IMG_PATH + 'RUNECRAFTING_ALTARS\';
+        ImagePath   := SPS_IMG_PATH + 'runecrafting_altars\';
         FactorX     := 400;
         FactorY     := 400;
         TileOffsetX := -1;
         TileOffSetY := -1;
-        Tolerance   := 0.2;
+        Tolerance   := 0.5;
+      end;
+
+    DOMINION_TOWER:
+      with SPS_Surface do
+      begin
+        Name        := 'Dominion Tower';
+        ImagePath   := SPS_IMG_PATH + 'dominion\';
+        FactorX     := 400;
+        FactorY     := 400;
+        TileOffsetX := -1;
+        TileOffSetY := -1;
+        Tolerance   := 0.3;
       end;
   end;
 
@@ -197,9 +210,9 @@ begin
   for i := L-1 downto 0 do
   begin
     try
-		  img := TMufasaBitmap.Create;
-		  img.LoadFromFile(SPS_Surface.ImagePath + SPS_Areas[i] + SPS_IMG_FMT);
-		  SPS_Worldmap[i] := SPS_BitmapToMap(img);
+      img := TMufasaBitmap.Create;
+      img.LoadFromFile(SPS_Surface.ImagePath + SPS_Areas[i] + SPS_IMG_FMT);
+      SPS_Worldmap[i] := SPS_BitmapToMap(img);
     finally
       img.free;
     except
@@ -219,13 +232,13 @@ var
   t, map, ang: integer;
 begin
   Result := Point(-1, -1);
-  
+
   if not LoggedIn then
     Exit;
 
   if not SPS_Loaded then
     SPS_Load;
-  
+
   // we should just rotate the minimap according to the minimap angle.
   ang := round(rs_GetCompassAngleDegrees());
   SPS_DebugStr('[SPS] Compass Angle: '+toStr(ang));
@@ -372,10 +385,11 @@ begin
         begin
           MouseFlag(MM.X, MM.Y, 0, 0, Integer(I<>H)*15);
           T := getSystemTime + 20000 + Random(1000);
- 	        Break;
+            Break;
         end;
       end;
     end;
+
     Result := (I = H);
   end;
 end;
