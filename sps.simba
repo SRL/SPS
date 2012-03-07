@@ -369,6 +369,7 @@ begin
   while (not Result) and (GetSystemTime < T) do
   begin
     RunEnergy(20);
+    FindNormalRandoms();
 
     P := SPS_GetMyPos;
     for I := H downto 0 do
