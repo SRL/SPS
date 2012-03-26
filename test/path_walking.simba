@@ -1,7 +1,11 @@
 program spsTest;
-{$DEFINE SMART}
-{$i srl/srl.scar}
+//{$DEFINE SMART}
+{$i srl/srl.simba}
 {$i sps/sps.simba}
+
+procedure antiban();
+begin
+end;
 
 var
   t: integer;
@@ -12,23 +16,21 @@ begin
   smart_signed := true;
   smart_superDetail := false;
 
+  activateClient();
   clearDebug();
   setupSRL();
 
+  SRL_Procs[SRL_Antiban] := @antiban;
+
   SPS_Debug := true;
 
+  SPS_Setup(RUNESCAPE_SURFACE, ['12_9']);
 
-  SPS_Setup(DWARVEN_MINE, ['0_0', '0_1']);
-  pts := [Point(278, 506), Point(329, 509), Point(359, 489), Point(392, 483)];
-{
-  repeat
-    inc(t);
+  //Writeln(toStr(SPS_WindWalk(point(4353, 3025))));
+  //Writeln(toStr(SPS_WindWalk(point(4579, 2906))));
 
-    if (SPS_WalkPath(pts)) then
-      writeLn(format('Walked %d times', [t]));
+  Writeln(toStr(SPS_WindWalk(point(4928, 3930))));
+  Writeln(toStr(SPS_WindWalk(point(4915, 4005))));
 
-    invertTPA(pts);
-  until(t = 50);
-}
   SPS_GetMyPos();
 end.

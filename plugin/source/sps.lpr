@@ -3,41 +3,37 @@ library sps;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, sysutils, FileUtil, Interfaces, mufasatypes, bitmaps;
+  Classes, sysutils, FileUtil, mufasatypes, bitmaps, math, Interfaces;
 
 type
   T3DIntegerArray = array of T2DIntegerArray;
   T4DIntegerArray = array of T3DIntegerArray;
+  TMufasaBitmapArray = array of TMufasaBitmap;
 
 function SPS_ColorBoxesMatchInline(B1, B2: TIntegerArray; tol: extended): boolean; inline;
-var
-  oneMinusTol, tolPlusOne: extended;
 begin
-  oneMinusTol := 1 - tol;
-  tolPlusOne := tol + 1;
-  Result := ((B1[0] >= Round(B2[0] * oneMinusTol)) and
-             (B1[0] <= Round(B2[0] * tolPlusOne))) and
-            ((B1[1] >= Round(B2[1] * oneMinusTol)) and
-             (B1[1] <= Round(B2[1] * tolPlusOne))) and
-            ((B1[2] >= Round(B2[2] * oneMinusTol)) and
-             (B1[2] <= Round(B2[2] * tolPlusOne)));
+  Result := False;
+
+  if (B2[0]+B2[1]+B2[2]) = 0 then
+    Exit;
+
+  if (abs(B1[0] - B2[0]) < tol) then
+    if (abs(B1[1] - B2[1]) < tol) then
+      if (abs(B1[2] - B2[2]) < tol) then
+        Result := True;
 end;
 
-function SPS_ColorBoxesMatch(B1, B2: TIntegerArray; tol: extended): boolean; register;
-begin
-  Result := SPS_ColorBoxesMatchInline(B1, B2, tol);
-end;
 
-function SPS_MakeColorBoxEx(bmp: TMufasaBitmap; x1, y1: integer): TIntegerArray;
+function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray; register;
 var
   x, y, width: integer;
   C: TRGB32;
 begin
   SetLength(Result, 3);
-  width := bmp.Width; // may not be necessary, but should help a bit.
+  width := bmp.Width;
 
-  for x := (x1 + 4) downto x1 do    // flipped these to downto since order is irrelevant
-    for y := (y1 + 4) downto y1 do  // downto will calc the initial only once rather than each time.
+  for x := (x1 + SideLength - 1) downto x1 do
+    for y := (y1 + SideLength - 1) downto y1 do
     begin
       try
         C := bmp.FData[y * width + x];
@@ -48,12 +44,37 @@ begin
     end;
 end;
 
-function SPS_BitmapToMap(bmp: TMufasaBitmap): T3DIntegerArray; register;
+
+procedure SPS_FilterMinimap(var Minimap: TMufasaBitmap); register;
+var
+  W, H, x, y: integer;
+  C: TRGB32;
+begin
+  W := Minimap.width;
+  H := Minimap.height;
+
+  for x := W - 1 downto 0 do
+    for y := H - 1 downto 0 do
+    begin
+      if hypot(abs(75.0 - x), abs(75.0 - y)) > 75 then
+      begin
+        Minimap.FastSetPixel(x, y, 0);
+        continue;
+      end;
+
+      C := Minimap.FData[y * W + x];
+
+    end;
+end;
+
+
+
+function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray; register;
 var
   X, Y, HighX, HighY: integer;
 begin
-  HighX := Trunc(bmp.Width / (5.0));
-  HighY := Trunc(bmp.Height / (5.0));
+  HighX := Trunc(bmp.Width / (SideLength*1.0));
+  HighY := Trunc(bmp.Height / (SideLength*1.0));
 
   SetLength(Result, HighX);
   for X := 0 to HighX - 1 do
@@ -61,57 +82,56 @@ begin
     SetLength(Result[X], HighY);
     for Y := 0 to HighY - 1 do
     begin
-      Result[X][Y] := SPS_MakeColorBoxEx(bmp, X * 5, Y * 5);
+      Result[X][Y] := SPS_MakeColorBox(bmp, X * SideLength, Y * SideLength, SideLength);
     end;
   end;
 end;
 
-function SPS_FindMapInMapEx(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended): integer; register;
+
+function SPS_FindMapInMap(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended; out FoundMatches: integer): integer; register;
 var
   x, y, HighX, HighY, cm, L: integer;
   xx, yy: integer;
-  Matching, BestMatch: integer;
+  Matching: integer;
+  BoxesInViewX, BoxesInViewY: integer;
   b: Boolean;
 begin
   fX := -1;
   fY := -1;
-  BestMatch := 0;
-
-  L := Length(LargeMap);
   Result := -1;
+  FoundMatches := 0;
+  L := Length(LargeMap);
+  BoxesInViewX := Length(SmallMap);
+  BoxesInViewY := Length(SmallMap[0]);
 
   for cm := 0 to L-1 do
   begin
-    HighX := High(LargeMap[cm]) - 19;
-    HighY := High(LargeMap[cm][0]) - 19;
+    HighX := High(LargeMap[cm]) - BoxesInViewX - 1;
+    HighY := High(LargeMap[cm][0]) - BoxesInViewY - 1;
+
     for x := 0 to HighX do
       for y := 0 to HighY do
       begin
         Matching := 0;
-        for xx := 0 to 19 do
-          for yy := 0 to 19 do
+
+        for xx := BoxesInViewX - 1 downto 0 do
+          for yy := BoxesInViewY - 1 downto 0 do
           begin
             b:= SPS_ColorBoxesMatchInline(LargeMap[cm][x+xx][y+yy], SmallMap[xx][yy], tol);
             if (b) then Inc(Matching);
           end;
 
-        if (Matching > BestMatch) then
+        if (Matching > FoundMatches) then
         begin
-          BestMatch := Matching;
+          FoundMatches := Matching;
           Result := cm;
           fX := x;
           fY := y;
         end;
       end;
   end;
-
-  if (Result > -1) then
-  begin
-    // moved outside to remove uncessary calculations in interations.
-    fX := fX * 5 + 50;  // cause we want the center
-    fy := fY * 5 + 50;
-  end;
 end;
+
 
 //////  EXPORTING  /////////////////////////////////////////////////////////////
 
@@ -122,7 +142,7 @@ end;
 
 function GetTypeCount(): Integer; stdcall; export;
 begin
-  Result := 2;
+  Result := 3;
 end;
 
 function GetTypeInfo(x: Integer; var sType, sTypeDef: string): integer; stdcall; export;
@@ -136,6 +156,10 @@ begin
         sType := 'T4DIntegerArray';
         sTypeDef := 'array of T3DIntegerArray;';
       end;
+    2: begin
+         sType := 'TMufasaBitmapArray';
+         sTypeDef := 'array of TMufasaBitmap';
+       end;
     else
       x := -1;
   end;
@@ -144,34 +168,40 @@ end;
 
 function GetFunctionCount(): Integer; stdcall; export;
 begin
-  Result := 3;
+  Result := 4;
 end;
 
 function GetFunctionCallingConv(x : Integer) : Integer; stdcall; export;
 begin
   Result := 0;
   case x of
-     0..2: Result := 1;
+     0..3: Result := 1;
   end;
 end;
 
 function GetFunctionInfo(x: Integer; var ProcAddr: Pointer; var ProcDef: PChar): Integer; stdcall; export;
 begin
   case x of
-    0: begin
-        ProcAddr := @SPS_ColorBoxesMatch;
-        StrPCopy(ProcDef, 'function SPS_ColorBoxesMatch(B1, B2: TIntegerArray; tol: extended): boolean;');
+    0:
+      begin
+        ProcAddr := @SPS_FindMapInMap;
+        StrPCopy(ProcDef, 'function SPS_FindMapInMap(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended; out FoundMatches: integer): integer;');
       end;
     1:
       begin
-        ProcAddr := @SPS_FindMapInMapEx;
-        StrPCopy(ProcDef, 'function SPS_FindMapInMapEx(var fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended): integer;');
+        ProcAddr := @SPS_BitmapToMap;
+        StrPCopy(ProcDef, 'function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray;');
       end;
     2:
       begin
-        ProcAddr := @SPS_BitmapToMap;
-        StrPCopy(ProcDef, 'function SPS_BitmapToMap(bmp: TMufasaBitmap): T3DIntegerArray;');
+        ProcAddr := @SPS_MakeColorBox;
+        StrPCopy(ProcDef, 'function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray;');
       end;
+    3:
+      begin
+        ProcAddr := @SPS_FilterMinimap;
+        StrPCopy(ProcDef, 'procedure SPS_FilterMinimap(var Minimap: TMufasaBitmap);');
+      end
   else
     x := -1;
   end;
@@ -187,4 +217,3 @@ exports GetFunctionCallingConv;
 
 begin
 end.
-

@@ -10,153 +10,60 @@ Concept and original work done by marpis @ SRL-Forums.
 
 const
   // Path where all the SPS files are
-  SPS_IMG_PATH   = IncludePath + 'SPS\img\';
-  SPS_IMG_FMT    = '.png';
+  SPS_IMG_PATH = IncludePath + 'SPS\img\';
+  SPS_IMG_FMT  = '.png';
 
-  // Supported SPS surfaces
-  RUNESCAPE_SURFACE    = 1;
-  DUNGEON_ESSENCE_MINE = 2;
-  DWARVEN_MINE         = 3;
-  RUNECRAFTING_ALTARS  = 4;
+  // Surfaces
+  RUNESCAPE_SURFACE = 0;
+  RUNESCAPE_SURFACE_FOLDER = 'runescape_surface\';
 
-type
-  TSPSSurface = record
-    Name, ImagePath: string;
-    Constant: integer;
-    FactorX, FactorY: integer; // used in SPS_LocalToGlobal
-    TileOffsetX, TileOffSetY: extended; // used for tile <-> SPS conversions
-    Tolerance: extended;
-  end;
+  RUNESCAPE_OTHER = 1;
+  RUNESCAPE_OTHER_FOLDER = 'runescape_other\';
 
 // SPS Global variables
 var
-  SPS_Loaded, SPS_Debug, SPS_Continue: boolean;
+  SPS_Debug, SPS_MultiMouse: boolean;
   SPS_Areas: TStringArray;
-  SPS_Surface: TSPSSurface;
-  SPS_Worldmap: T4DIntegerArray;
+  SPS_AreaMaps: T4DIntegerArray;
+  SPS_Tolerance, SPS_MinimumMatches: extended;
+  SPS_Surface: integer;
 
-procedure SPS_DebugStr(msg: string);
-begin
-  if (SPS_Debug) then
-    Writeln('[SPS] '+msg);
-end;
-
-// Should be called in scripts to setup SPS
-// Needs to be called each time the surface changes (i.e. from runescape_surface to essence_mine)
-procedure SPS_Setup(surface: integer; areas: TStringArray);
-begin
-  SPS_Areas := areas;
-
-  case surface of
-    RUNESCAPE_SURFACE:
-      with SPS_Surface do
-      begin
-        Name        := 'Runescape Surface';
-        ImagePath   := SPS_IMG_PATH + 'runescape_surface\';
-        FactorX     := 400;
-        FactorY     := 400;
-        TileOffsetX := -1;
-        TileOffSetY := -1;
-        Tolerance   := 0.3;
-      end;
-
-    DUNGEON_ESSENCE_MINE:
-      with SPS_Surface do
-      begin
-        Name        := 'Essence Mine';
-        ImagePath   := SPS_IMG_PATH + 'essence_mine\';
-        FactorX     := 400;
-        FactorY     := 1;
-        TileOffsetX := -1;
-        TileOffSetY := -1;
-        Tolerance   := 0.5;
-      end;
-
-    DWARVEN_MINE:
-      with SPS_Surface do
-      begin
-        Name        := 'Dwarven Mine';
-        ImagePath   := SPS_IMG_PATH + 'dwarven_mine\';
-        FactorX     := 400;
-        FactorY     := 340;
-        TileOffsetX := -1;
-        TileOffSetY := -1;
-        Tolerance   := 0.35;
-      end;
-
-    RUNECRAFTING_ALTARS:
-      with SPS_Surface do
-      begin
-        Name        := 'Runecrafting Altars';
-        ImagePath   := SPS_IMG_PATH + 'RUNECRAFTING_ALTARS\';
-        FactorX     := 400;
-        FactorY     := 400;
-        TileOffsetX := -1;
-        TileOffSetY := -1;
-        Tolerance   := 0.2;
-      end;
-  end;
-
-  SPS_Surface.Constant := surface;
-
-  if (SPS_Debug) then
-  begin
-    SPS_DebugStr('[SPS] SPS_Surface: ' + SPS_Surface.Name);
-    SPS_DebugStr('[SPS] SPS_Areas: ' + toStr(SPS_Areas));
-  end;
-
-  SPS_Loaded := false;
-end;
-
-procedure SPS_WarnUser(proc, error: string);
-begin
-  if (not SPS_Continue) then
-  begin
-    ShowMessage('SPS: ' + error + ' in ' + proc + #10+#13+#10+#13+
-      'Please run Simba as an administrator by right clicking and ' + #10+#13+
-      'choosing "Run as administrator."  You may also have to restart ' + #10+#13+
-      'Simba a few times.  ' + #10+#13+#10+#13+'Sorry for the inconvenience.');
-    TerminateScript();
-  end;
-end;
-
-// Gets the map pieces that appear on the minimap
-function SPS_GatherMinimap: T3DIntegerArray;
+// Returns an image of the minimap in a TMufasaBitmap
+function SPS_GatherMinimap: TMufasaBitmap;
 var
-  bmp: TMufasaBitmap;
   c: TClient;
 begin
   try
-    bmp := TMufasaBitmap.Create;
-    bmp.SetSize(100, 100);
+    Result := TMufasaBitmap.Create;
+    Result.SetSize(150, 150);
 
     c := getTClient;
-    bmp.CopyClientToBitmap(
-        c.IOManager, false, 0,0, MMCX-50, MMCY-50, MMCX+50, MMCY+50
+    Result.CopyClientToBitmap(
+        c.IOManager, false, 0,0, MMCX-75, MMCY-75, MMCX+75, MMCY+75
       );
 
-    Result := SPS_BitmapToMap(bmp);
-  finally
-    bmp.free;
   except
-    SPS_DebugStr('[ERROR] in SPS_GatherMinimap: '+ExceptionToString(ExceptionType, ExceptionParam));
-    SPS_WarnUser('SPS_GatherMinimap', ExceptionToString(ExceptionType, ExceptionParam));
+    Writeln('[ERROR] in SPS_GatherMinimap: '+ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 
+// Gets the starting area coordinates depending on the area image
 procedure SPS_GetAreaCoords(Area: string; var x, y: integer);
 var
   p: integer;
 begin
+  // if it's a specific dungeon map (i.e. name isn't 0_0, 10_2, etc.)
+  if (length(getNumbers(Area)) < 2) then
+  begin
+    x := 0;
+    y := 0;
+    Exit;
+  end;
+
   p := pos('_', Area);
-  if (p <= 0) then
-    // raise an exception if Area is of wrong format
-    RaiseException(erCustomError, 'Invalid Area passed: ' + area);
 
-  x := StrToIntDef(copy(Area, 1, p-1), -1);
-  y := StrToIntDef(copy(Area, p+1, Length(Area)-p), -1);
-
-  SPS_DebugStr(format('[SPS] Area coords (%d, %d)', [x, y]));
+  x := StrToIntDef(copy(Area, 1, p - 1), -1);
+  y := StrToIntDef(copy(Area, p + 1, Length(Area) - p), -1);
 end;
 
 // Converts a point from a map piece to a point on the entire map
@@ -165,144 +72,90 @@ var
   cx, cy: integer;
 begin
   SPS_GetAreaCoords(Area, cx, cy);
-  Result.x := cx * SPS_Surface.FactorX + x;
-  Result.y := cy * SPS_Surface.FactorY + y;
+  Result.x := cx * 400 + x;
+  Result.y := cy * 400 + y;
 end;
 
-// Gets SPS ready to be used (this doesn't have to be called in scripts)
-procedure SPS_Load;
+// Converts a point from the entire map to a point on the main screen
+function SPS_GlobalToLocal(x, y: integer): TPoint;
 var
-  L, i, timer : integer;
-  img: TMufasaBitmap;
+  cx, cy: integer;
 begin
-  timer := getSystemTime;
-  L := Length(SPS_Areas);
+  cx := Floor(x / 400);
+  cy := Floor(y / 400);
 
-  if (L <= 0) then
-  begin
-    SPS_DebugStr('[SPS] WARNING: SPS_Areas hasn''t been set');
-    exit;
-  end;
-
-  if (SPS_Surface.Name = '') then
-  begin
-    SPS_DebugStr('[SPS] WARNING: SPS_Surface isn''t set! Using Runescape Surface as default');
-    SPS_Setup(RUNESCAPE_SURFACE, SPS_Areas);
-  end;
-
-  // clean up the old one just in case, we do not want copies in wrong places.
-  SetLength(SPS_WorldMap, 0);
-  SetLength(SPS_Worldmap, L);
-
-  for i := L-1 downto 0 do
-  begin
-    try
-		  img := TMufasaBitmap.Create;
-		  img.LoadFromFile(SPS_Surface.ImagePath + SPS_Areas[i] + SPS_IMG_FMT);
-		  SPS_Worldmap[i] := SPS_BitmapToMap(img);
-    finally
-      img.free;
-    except
-      SPS_DebugStr('[SPS] ERROR: SPS_Load: '+ExceptionToString(ExceptionType, ExceptionParam));
-      SPS_WarnUser('SPS_Load', ExceptionToString(ExceptionType, ExceptionParam));
-    end;
-  end;
-
-  SPS_DebugStr('[SPS] Maps loaded in '+ToStr(getSystemTime - timer)+'ms.');
-  SPS_Loaded := True;
+  Result.x := x - cx * 400;
+  Result.y := y - cy * 400;
 end;
 
-// Returns the SPS position of the player
-function SPS_GetMyPos: TPoint;
-var
-  Minimap: T3DIntegerArray;
-  t, map, ang: integer;
+// Returns the coordinates (x, y) in the form of a string
+function SPS_AreaCoordsToString(x, y: integer): string;
 begin
-  Result := Point(-1, -1);
-  
-  if not LoggedIn then
-    Exit;
+  Result := IntToStr(x)+'_'+IntToStr(y);
+end;
 
-  if not SPS_Loaded then
-    SPS_Load;
-  
-  // we should just rotate the minimap according to the minimap angle.
-  ang := round(rs_GetCompassAngleDegrees());
-  SPS_DebugStr('[SPS] Compass Angle: '+toStr(ang));
+// Loads the "Area" image
+function SPS_GetArea(Area: string; surface: integer): TMufasaBitmap;
+var
+  x, y: integer;
+  S: string;
+begin
+  SPS_GetAreaCoords(Area, x, y);
 
-  if (inRange(ang, 10, 350)) then
-    {$IFDEF SRL5}
-    ClickNorth(SRL_ANGLE_HIGH);
-    {$ELSE}
-    ClickNorth(True);
-    {$ENDIF}
-
-  t := getSystemTime;
-  Minimap := SPS_GatherMinimap;
-  if (High(Minimap) < 0) then
-  begin
-    SPS_DebugStr('[SPS] Did not gather Minimap.');
-    Exit;
+  case surface of
+    RUNESCAPE_SURFACE: s := RUNESCAPE_SURFACE_FOLDER;
+    RUNESCAPE_OTHER: s := RUNESCAPE_OTHER_FOLDER;
   end;
 
   try
-    map := SPS_FindMapInMapEx(
-        Result.X, Result.Y, SPS_Worldmap, Minimap, SPS_Surface.Tolerance
-      );
-
-    if ((Result.X > 0) and (Result.Y > 0)) then
-    begin
-      Result := SPS_LocalToGlobal(SPS_Areas[map], Result.X, Result.Y);
-    end;
-
-    SPS_DebugStr(format('[SPS] GetMyPos: Finished in %d ms. Location = %s',
-        [getSystemTime - t, toStr(result)]));
-
+	  Result := TMufasaBitmap.Create;
+		Result.LoadFromFile(SPS_IMG_PATH + s + Area + SPS_IMG_FMT);
   except
-    SPS_DebugStr('[SPS] ERROR in SPS_GetMyPos: ' + ExceptionToString(ExceptionType, ExceptionParam));
-    SPS_WarnUser('SPS_GetMyPos', ExceptionToString(ExceptionType, ExceptionParam));
+    Writeln('[SPS] ERROR: SPS_GetArea: '+ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 
-// Converts an SPS pos to a tile
-function SPS_PosToTile(pos: TPoint): TPoint;
-begin
-  result := point(-1, -1);
-
-  if (SPS_Surface.TileOffsetX = -1) then
-  begin
-    SPS_DebugStr('No conversion available for ' + SPS_Surface.Name);
-    exit;
-  end;
-
-  result.X := round(SPS_Surface.TileOffsetX + (pos.x / 4));
-  result.Y := round(SPS_Surface.TileOffsetY - (pos.y / 4));
-end;
-
-// Converts a tile to and SPS point, or "pos"
-function SPS_TileToPos(tile: TPoint): TPoint;
-begin
-  result := point(-1, -1);
-
-  if (SPS_Surface.TileOffsetX = -1) then
-  begin
-    SPS_DebugStr('No conversion available for ' + SPS_Surface.Name);
-    exit;
-  end;
-
-  result.X := round((tile.x - SPS_Surface.TileOffsetX) * 4);
-  result.Y := round((SPS_Surface.TileOffsetY - tile.y) * 4);
-end;
-
-// Converts a tile path to an SPS path
-function SPS_TilePathToPos(tiles: TPointArray): TPointArray;
+// SPS2
+function SPS_GetMyPos(): TPoint;
 var
-  i: integer;
+  Minimap: TMufasaBitmap;
+  SmallMap: T3DIntegerArray;
+  t, map, FoundMatches: integer;
+  P: TPoint;
 begin
-  setLength(result, length(tiles));
+  Result := Point(-1, -1);
 
-  for i := 0 to high(result) do
-    result[i] := SPS_TileToPos(tiles[i]);
+  if (SPS_Tolerance < 1.0) then
+    SPS_Tolerance := 600.0;
+
+  if (SPS_MinimumMatches = 0.0) then
+    SPS_MinimumMatches := 0.35;
+
+  if not LoggedIn then
+    Exit;
+
+  if (inRange(round(rs_GetCompassAngleDegrees), 10, 350)) then
+    MakeCompass('N');
+
+  t := getSystemTime;
+
+  Minimap := SPS_GatherMinimap;
+  SPS_FilterMinimap(Minimap);
+  //DrawBitmapDebugImg(Minimap.Index);
+  //DisplayDebugImgWindow(150, 150);
+  SmallMap := [];
+  SmallMap := SPS_BitmapToMap(Minimap, 5);
+
+  map := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance, FoundMatches);
+
+  if ((FoundMatches / 706.0) > SPS_MinimumMatches) then
+    Result := SPS_LocalToGlobal(SPS_Areas[map], P.x*5 + 75, P.y*5 + 75);
+
+  Minimap.Free;
+
+  t := (GetSystemTime - t);
+  if (SPS_Debug) then
+    Writeln('[SPS] SPS_GetMyPos() finished in '+ToStr(t)+' ms. Result = '+ToStr(Result));
 end;
 
 // Finds position P in minimap by checking your own location
@@ -310,28 +163,37 @@ function SPS_PosToMM(P: TPoint): TPoint;
 var
   MyPos: TPoint;
 begin
-  if not LoggedIn then Exit;
+  if not LoggedIn then
+    Exit;
+
   Result := Point(-1, -1);
   MyPos := SPS_GetMyPos;
-  if Distance(MyPos.X, MyPos.Y, P.X, P.Y) < 72 then
-    Result := Point(MMCX + P.X - MyPos.X,
-                    MMCY + P.Y - MyPos.Y);
+
+  if (Distance(MyPos.X, MyPos.Y, P.X, P.Y) < 75) then
+    Result := Point(MMCX + P.X - MyPos.X, MMCY + P.Y - MyPos.Y);
 end;
 
-// Walks to position. If walking paths, please use WalkPath.
+// Walks to position, P.
 function SPS_WalkToPos(P: TPoint): boolean;
 var
   MM: TPoint;
 begin
-  if not LoggedIn then Exit;
+  if not LoggedIn then
+    Exit;
+
   MM := SPS_PosToMM(P);
 
   if (MM.X > 0) then
   begin
-    Mouse(MM.X, MM.Y, 0, 0, True);
+    if (SPS_MultiMouse) then
+      MultiMouse(MM.X, MM.Y, 25, 3, false)
+    else
+      Mouse(MM.X, MM.Y, 0, 0, mouse_Left);
+
     if WaitFunc(@IsMoving, 1, 3000 + random(500)) then
       while IsMoving do
         Flag;
+
     Result := True;
   end;
 end;
@@ -353,6 +215,7 @@ var
 begin
   H := High(Path);
   T := GetSystemTime + 20000 + Random(5000);
+
   while (not Result) and (GetSystemTime < T) do
   begin
     RunEnergy(20);
@@ -367,15 +230,126 @@ begin
 
       if (D < 10) then
         break
-      else begin
+      else
         if (D < 70) then
         begin
-          MouseFlag(MM.X, MM.Y, 0, 0, Integer(I<>H)*15);
+          if (SPS_MultiMouse) then
+            MultiMouse(MM.X, MM.Y, 25, 3, false)
+          else
+            Mouse(MM.X, MM.Y, 0, 0, mouse_Left);
+
+          FFlag(Integer(I <> H) * 15);
+
           T := getSystemTime + 20000 + Random(1000);
  	        Break;
         end;
-      end;
     end;
+
     Result := (I = H);
   end;
 end;
+
+// Generates a TPA from point(xs, ys) to point(xe, ye)
+function SPS_WindPath(xs, ys, xe, ye, gravity, wind, maxStep, targetArea: extended): TPointArray;
+var
+  veloX, veloY, windX, windY, veloMag, dist, randomDist, lastDist, step: extended;
+  lastX, lastY: integer;
+  sqrt2, sqrt3, sqrt5: extended;
+begin
+  sqrt2:= sqrt(2);
+  sqrt3:= sqrt(3);
+  sqrt5:= sqrt(5);
+
+  while (hypot(xs - xe, ys - ye) > 1) do
+  begin
+    dist := hypot(xs - xe, ys - ye);
+    wind := minE(wind, dist);
+
+    if (dist >= targetArea) then
+    begin
+      windX := (windX / sqrt3 + (random(round(wind) * 2 + 5) - wind) / sqrt5);
+      windY := (windY / sqrt3 + (random(round(wind) * 2 + 5) - wind) / sqrt5);
+    end else begin
+      windX := (windX / sqrt2);
+      windY := (windY / sqrt2);
+
+      if (maxStep < 15) then
+        maxStep := (random(15) + 15)
+      else
+        maxStep := (maxStep / sqrt5);
+    end;
+
+    veloX := (veloX + windX);
+    veloY := (veloY + windY);
+    veloX := (veloX + gravity * (xe - xs) / dist);
+    veloY := (veloY + gravity * (ye - ys) / dist);
+
+    if (hypot(veloX, veloY) > maxStep) then
+    begin
+      randomDist := (maxStep / 2.0 + random(round(maxStep) / 2));
+      veloMag := sqrt(veloX * veloX + veloY * veloY);
+      veloX := ((veloX / veloMag) * randomDist);
+      veloY := ((veloY / veloMag) * randomDist);
+    end;
+
+    lastX := round(xs);
+    lastY := round(ys);
+    xs := (xs + veloX);
+    ys := (ys + veloY);
+
+    setLength(result, length(result) + 1);
+    result[high(result)] := point(round(xs), round(ys));
+
+    step := hypot(xs - lastX, ys - lastY);
+    lastdist := dist;
+  end;
+end;
+
+// Walks from the player's current position to the point T
+function SPS_WindWalk(T: TPoint): Boolean;
+var
+  I, Tries: Integer;
+  M, P: TPoint;
+  ctrlPoints: TPointArray;
+begin
+  P := T;
+
+  repeat
+    M := SPS_GetMyPos;
+
+    if (Length(ctrlPoints) = 0) then
+      ctrlPoints := SPS_WindPath(M.X, M.Y, P.X, P.Y, 22.5, 12.5, 40, 10);
+
+    Inc(Tries);
+    if (Tries > 20) then
+      Exit;
+
+    Result := SPS_WalkPath(ctrlPoints);
+  until(Result);
+end;
+
+// Sets up SPS; needs to be called if you want to switch RS surfaces
+procedure SPS_Setup(surface: integer; areas: TStringArray);
+var
+  l, i, t: integer;
+  tmp: TMufasaBitmap;
+begin
+  t := getSystemTime;
+  l := Length(areas);
+  SetLength(SPS_AreaMaps, l);
+  SetLength(SPS_Areas, l);
+  SPS_Surface := surface;
+  SPS_MultiMouse := true;
+
+  for i := 0 to (l - 1) do
+  begin
+    tmp := SPS_GetArea(areas[i], surface);
+    SPS_AreaMaps[i] := SPS_BitmapToMap(tmp, 5);
+    SPS_Areas[i] := areas[i];
+    tmp.free;
+  end;
+
+  t := (getSystemTime - t);
+  writeln('[SPS] SPS_Setup() took '+toStr(t)+' ms. Loaded '+toStr(L)+' areas.');
+end;
+
