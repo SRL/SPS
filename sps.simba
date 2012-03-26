@@ -155,7 +155,7 @@ begin
 
   t := (GetSystemTime - t);
   if (SPS_Debug) then
-    Writeln('[SPS] SPS_GetMyPos() finished in '+ToStr(t)+' ms. Result = '+ToStr(Result));
+    Writeln('[SPS] SPS_GetMyPos() Finished in '+ToStr(t)+' ms. Result = '+ToStr(Result));
 end;
 
 // Finds position P in minimap by checking your own location

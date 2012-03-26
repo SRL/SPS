@@ -20,17 +20,10 @@ begin
   clearDebug();
   setupSRL();
 
-  SRL_Procs[SRL_Antiban] := @antiban;
-
   SPS_Debug := true;
+  SRL_Procs[SRL_Antiban] := @antiban;
+  SPS_Setup(RUNESCAPE_SURFACE, ['10_7', '11_7']);
 
-  SPS_Setup(RUNESCAPE_SURFACE, ['12_9']);
-
-  //Writeln(toStr(SPS_WindWalk(point(4353, 3025))));
-  //Writeln(toStr(SPS_WindWalk(point(4579, 2906))));
-
-  Writeln(toStr(SPS_WindWalk(point(4928, 3930))));
-  Writeln(toStr(SPS_WindWalk(point(4915, 4005))));
-
-  SPS_GetMyPos();
+  Writeln(toStr(SPS_WindWalk(point(4353, 3025))));
+  Writeln(toStr(SPS_WindWalk(point(4579, 2906))));
 end.
