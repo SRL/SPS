@@ -10,43 +10,55 @@ uses
 type
   T3DIntegerArray = array of T2DIntegerArray;
   T4DIntegerArray = array of T3DIntegerArray;
-  TMufasaBitmapArray = array of TMufasaBitmap;
 
+(**
+ * Retruns true if the color boxes (B1 and B2) match within the tolerance (tol).
+ *)
 function SPS_ColorBoxesMatchInline(B1, B2: TIntegerArray; tol: extended): boolean; inline;
 begin
   Result := False;
 
+  // B[0] = Red; B[1] = Green, B[2] = Blue (see SPS_MakeColorBox)
+
   if ((B2[0] + B2[1] + B2[2]) = 0) then
     Exit;
 
+  // if the difference between the two 'color boxes' RGB values are less than the tolerance
   if (abs(B1[0] - B2[0]) < tol) then
     if (abs(B1[1] - B2[1]) < tol) then
       if (abs(B1[2] - B2[2]) < tol) then
         Result := True;
 end;
 
+(**
+ * Returns the TOTAL RGB values of each pixel in a box (starting at x1, y1 with
+ * side lengths 'SideLength') on the bitmap (bmp).
+ *
+ *    Result[0] = Red
+ *    Result[1] = Green
+ *    Result[2] = Blue
+ *)
 function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray; register;
 var
   x, y, width, C, R, G, B: integer;
 begin
   SetLength(Result, 3);
-  width := bmp.Width;
 
   for x := (x1 + SideLength - 1) downto x1 do
     for y := (y1 + SideLength - 1) downto y1 do
     begin
-      try
-        C := bmp.fastGetPixel(x, y);
-        ColorToRGB(C, R, G, B);
+      C := bmp.fastGetPixel(x, y);
+      ColorToRGB(C, R, G, B);
 
-        Result[0] := Result[0] + R;
-        Result[1] := Result[1] + G;
-        Result[2] := Result[2] + B;
-      except
-      end;
+      Result[0] := Result[0] + R;
+      Result[1] := Result[1] + G;
+      Result[2] := Result[2] + B;
     end;
 end;
 
+(**
+ * Filters the edges of the minimap so only the circle appears as colors.
+ *)
 procedure SPS_FilterMinimap(var Minimap: TMufasaBitmap); register;
 var
   W, H, x, y: integer;
@@ -63,12 +75,15 @@ begin
       end;
 end;
 
+(**
+ * Converts the bitmap (bmp) to a 'grid' of color boxes.
+ *)
 function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray; register;
 var
   X, Y, HighX, HighY: integer;
 begin
-  HighX := Trunc(bmp.Width / (SideLength*1.0));
-  HighY := Trunc(bmp.Height / (SideLength*1.0));
+  HighX := Trunc(bmp.Width / (SideLength * 1.0));
+  HighY := Trunc(bmp.Height / (SideLength * 1.0));
 
   SetLength(Result, HighX);
   for X := 0 to HighX - 1 do
@@ -81,23 +96,26 @@ begin
   end;
 end;
 
+(**
+ * Returns 4 variables:
+ *    fx, fy: The X and Y of the grid piece
+ *)
 function SPS_FindMapInMap(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended; out FoundMatches: integer): integer; register;
 var
   x, y, HighX, HighY, cm, L: integer;
   xx, yy: integer;
   Matching: integer;
   BoxesInViewX, BoxesInViewY: integer;
-  b: Boolean;
 begin
   fX := -1;
   fY := -1;
   Result := -1;
   FoundMatches := 0;
   L := Length(LargeMap);
-  BoxesInViewX := Length(SmallMap);
-  BoxesInViewY := Length(SmallMap[0]);
+  BoxesInViewX := Length(SmallMap);    // columns in the grid
+  BoxesInViewY := Length(SmallMap[0]); // rows in the grid
 
-  for cm := 0 to L-1 do
+  for cm := 0 to L-1 do // loop through each SPS area (i.e. map piece)
   begin
     HighX := High(LargeMap[cm]) - BoxesInViewX - 1;
     HighY := High(LargeMap[cm][0]) - BoxesInViewY - 1;
@@ -109,12 +127,8 @@ begin
 
         for xx := BoxesInViewX - 1 downto 0 do
           for yy := BoxesInViewY - 1 downto 0 do
-          begin
-            b:= SPS_ColorBoxesMatchInline(LargeMap[cm][x+xx][y+yy], SmallMap[xx][yy], tol);
-
-            if (b) then
-              Inc(Matching);
-          end;
+            if (SPS_ColorBoxesMatchInline(LargeMap[cm][x+xx][y+yy], SmallMap[xx][yy], tol)) then
+              Matching := (Matching + 1);
 
         if (Matching > FoundMatches) then
         begin
