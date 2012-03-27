@@ -133,6 +133,7 @@ begin
       begin
         Matching := 0;
 
+        // compares the minimap to a chunch of the SPS_Area
         for xx := BoxesInViewX - 1 downto 0 do
           for yy := BoxesInViewY - 1 downto 0 do
             if (SPS_ColorBoxesMatchInline(LargeMap[cm][x+xx][y+yy], SmallMap[xx][yy], tol)) then
