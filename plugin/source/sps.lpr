@@ -40,7 +40,7 @@ end;
  *)
 function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray; register;
 var
-  x, y, width, C, R, G, B: integer;
+  x, y, C, R, G, B: integer;
 begin
   SetLength(Result, 3);
 
@@ -98,7 +98,9 @@ end;
 
 (**
  * Returns 4 variables:
- *    fx, fy: The X and Y of the grid piece
+ *    fx, fy: The X and Y of the grid piece in SmallMap that best matches the LargeMap.
+ *    FoundMatches: The number of color box matches found.
+ *    Result: The index of the SPS_Area with the best match.
  *)
 function SPS_FindMapInMap(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended; out FoundMatches: integer): integer; register;
 var
@@ -115,10 +117,16 @@ begin
   BoxesInViewX := Length(SmallMap);    // columns in the grid
   BoxesInViewY := Length(SmallMap[0]); // rows in the grid
 
-  for cm := 0 to L-1 do // loop through each SPS area (i.e. map piece)
+  //writeln('SPS_FindMapInMap: BoxesInViewX: '+intToStr(BoxesInViewX));
+  //writeln('SPS_FindMapInMap: BoxesInViewY: '+intToStr(BoxesInViewY));
+
+  for cm := 0 to (L - 1) do // loop through each SPS area (i.e. map piece)
   begin
-    HighX := High(LargeMap[cm]) - BoxesInViewX - 1;
-    HighY := High(LargeMap[cm][0]) - BoxesInViewY - 1;
+    HighX := High(LargeMap[cm]) - BoxesInViewX;
+    HighY := High(LargeMap[cm][0]) - BoxesInViewY;
+
+    //writeln('SPS_FindMapInMap: HighX: '+intToStr(HighX));
+    //writeln('SPS_FindMapInMap: HighY: '+intToStr(HighY));
 
     for x := 0 to HighX do
       for y := 0 to HighY do

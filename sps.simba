@@ -20,11 +20,14 @@ const
   RUNESCAPE_OTHER = 1;
   RUNESCAPE_OTHER_FOLDER = 'runescape_other\';
 
+  // Splits minimap/areas into squares of this side length; used for area recognition
+  SPS_SIDE_LENGTH = 5;
+
 // SPS Global variables
 var
   SPS_Debug, SPS_MultiMouse: boolean;
   SPS_Areas: TStringArray;
-  SPS_AreaMaps: T4DIntegerArray;
+  SPS_AreaMaps: T4DIntegerArray; // Array of grids for each area in SPS_Areas
   SPS_Tolerance, SPS_MinimumMatches: extended;
   SPS_Surface: integer;
 
@@ -39,7 +42,7 @@ begin
 
     c := getTClient;
     Result.CopyClientToBitmap(
-        c.IOManager, false, 0,0, MMCX-75, MMCY-75, MMCX+75, MMCY+75
+        c.IOManager, false, 0, 0, MMCX-75, MMCY-75, MMCX+75, MMCY+75
       );
 
   except
@@ -72,8 +75,8 @@ var
   cx, cy: integer;
 begin
   SPS_GetAreaCoords(Area, cx, cy);
-  Result.x := cx * 400 + x;
-  Result.y := cy * 400 + y;
+  Result.x := (cx * 400) + x;
+  Result.y := (cy * 400) + y;
 end;
 
 // Converts a point from the entire map to a point on the main screen
@@ -84,8 +87,8 @@ begin
   cx := Floor(x / 400);
   cy := Floor(y / 400);
 
-  Result.x := x - cx * 400;
-  Result.y := y - cy * 400;
+  Result.x := x - (cx * 400);
+  Result.y := y - (cy * 400);
 end;
 
 // Returns the coordinates (x, y) in the form of a string
@@ -144,12 +147,19 @@ begin
   //DrawBitmapDebugImg(Minimap.Index);
   //DisplayDebugImgWindow(150, 150);
   SmallMap := [];
-  SmallMap := SPS_BitmapToMap(Minimap, 5);
+  SmallMap := SPS_BitmapToMap(Minimap, SPS_SIDE_LENGTH);
 
   map := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance, FoundMatches);
-
+{
+  writeln('fx: '+toStr(p.x)+' ~ on area: '+toStr(p.x * SPS_SIDE_LENGTH));
+  writeln('fy: '+toStr(p.y)+' ~ on area: '+toStr(p.y * SPS_SIDE_LENGTH));
+  writeln('matches: '+toStr(foundMatches));
+  writeln('area index: '+toStr(map));
+}
   if ((FoundMatches / 706.0) > SPS_MinimumMatches) then
-    Result := SPS_LocalToGlobal(SPS_Areas[map], P.x*5 + 75, P.y*5 + 75);
+    // the "* SPS_SIDE_LENGTH" is because P.X and P.Y are the coords of the grid piece the map was found in
+    Result := SPS_LocalToGlobal(SPS_Areas[map],
+                P.X * SPS_SIDE_LENGTH, P.Y * SPS_SIDE_LENGTH);
 
   Minimap.Free;
 
@@ -344,12 +354,14 @@ begin
   for i := 0 to (l - 1) do
   begin
     tmp := SPS_GetArea(areas[i], surface);
-    SPS_AreaMaps[i] := SPS_BitmapToMap(tmp, 5);
+    SPS_AreaMaps[i] := SPS_BitmapToMap(tmp, SPS_SIDE_LENGTH);
     SPS_Areas[i] := areas[i];
     tmp.free;
   end;
 
   t := (getSystemTime - t);
-  writeln('[SPS] SPS_Setup() took '+toStr(t)+' ms. Loaded '+toStr(L)+' areas.');
+
+  if (SPS_Debug) then
+    writeln('[SPS] SPS_Setup() took '+toStr(t)+' ms. Loaded '+toStr(L)+' areas.');
 end;
 
