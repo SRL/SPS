@@ -21,14 +21,14 @@ const
   RUNESCAPE_OTHER_FOLDER = 'runescape_other\';
 
   // Splits minimap/areas into squares of this side length; used for area recognition
-  SPS_SIDE_LENGTH = 5;
+  SPS_SIDE_LENGTH = 4;
 
 // SPS Global variables
 var
   SPS_Debug, SPS_MultiMouse: boolean;
   SPS_Areas: TStringArray;
-  SPS_AreaMaps: T4DIntegerArray; // Array of grids for each area in SPS_Areas
-  SPS_Tolerance, SPS_MinimumMatches: extended;
+  SPS_AreaMaps: T3DIntegerArray; // Grids of the combined SPS_Areas
+  SPS_Tolerance, SPS_MatchesPercent: extended;
   SPS_Surface: integer;
 
 // Returns an image of the minimap in a TMufasaBitmap
@@ -46,7 +46,7 @@ begin
       );
 
   except
-    Writeln('[ERROR] in SPS_GatherMinimap: '+ExceptionToString(ExceptionType, ExceptionParam));
+    Writeln('SPS_GatherMinimap ERROR: '+ExceptionToString(ExceptionType, ExceptionParam));
   end;
 end;
 
@@ -67,6 +67,8 @@ begin
 
   x := StrToIntDef(copy(Area, 1, p - 1), -1);
   y := StrToIntDef(copy(Area, p + 1, Length(Area) - p), -1);
+
+  //writeln('SPS_GetAreaCoords: '+toStr(point(x, y)));
 end;
 
 // Converts a point from a map piece to a point on the entire map
@@ -97,6 +99,39 @@ begin
   Result := IntToStr(x)+'_'+IntToStr(y);
 end;
 
+// Author: Coh3n
+// Returns a TPA of the areas' values
+function SPS_TPAFromAreas(areas: TStringArray): TPointArray;
+var
+  i: integer;
+begin
+  setLength(result, length(areas));
+
+  for i := 0 to high(areas) do
+    SPS_GetAreaCoords(areas[i], result[i].x, result[i].y);
+end;
+
+// Author: Coh3n
+// Sorts the areas from the upper left corner of the map
+function SPS_QuickSortAreas(areas: TStringArray): TStringArray;
+var
+  i: integer;
+  tpa: TPointArray;
+begin
+  setLength(tpa, length(areas));
+
+  tpa := SPS_TPAFromAreas(areas);
+  clearDoubleTPA(tpa);
+  sortTPAFrom(tpa, point(0, 0));
+
+  setLength(result, length(tpa));
+
+  for i := 0 to high(tpa) do
+    result[i] := SPS_AreaCoordsToString(tpa[i].x, tpa[i].y);
+
+  //writeln('SPS_QuickSortAreas: '+toStr(result));
+end;
+
 // Loads the "Area" image
 function SPS_GetArea(Area: string; surface: integer): TMufasaBitmap;
 var
@@ -114,8 +149,76 @@ begin
 	  Result := TMufasaBitmap.Create;
 		Result.LoadFromFile(SPS_IMG_PATH + s + Area + SPS_IMG_FMT);
   except
-    Writeln('[SPS] ERROR: SPS_GetArea: '+ExceptionToString(ExceptionType, ExceptionParam));
+    Writeln('SPS_GetArea ERROR: '+ExceptionToString(ExceptionType, ExceptionParam));
   end;
+end;
+
+// Author: Coh3n
+// Merges the SPS 'areas' into one bitmap (makes more more accurate GetMyPos)
+function SPS_MergeAreas(areas: TStringArray): TMufasaBitmap;
+var
+  t, i, l, diffX, diffY, newWidth, newHeight: integer;
+  newAreas: TStringArray;
+  xVals, yVals: TIntegerArray;
+  bmpTemp: TMufasaBitmap;
+begin
+  t := getSystemTime();
+
+  // sort the areas from
+  newAreas := SPS_QuickSortAreas(areas);
+
+  l := length(newAreas);
+  setLength(xVals, l);
+  setLength(yVals, l);
+
+  // get the x and y values for each area
+  for i := 0 to high(newAreas) do
+    SPS_GetAreaCoords(newAreas[i], xVals[i], yVals[i]);
+
+  // if there's only one area in the array
+  if (l = 1) then
+  begin
+    result := SPS_GetArea(areas[0], RUNESCAPE_SURFACE);
+    exit;
+  end;
+
+  try
+    result := TMufasaBitmap.create();
+
+    // draw the first area to the top left of the bitmap
+    bmpTemp := SPS_GetArea(newAreas[0], RUNESCAPE_SURFACE);
+    result.SetSize(bmpTemp.width, bmpTemp.height);
+    bmpTemp.fastDrawTransparent(0, 0, result);
+    bmpTemp.free();
+
+    for i := 0 to (l - 2) do
+    begin
+      diffX := round(abs(xVals[i + 1] - xVals[0]));
+      diffY := round(abs(yVals[i + 1] - yVals[0]));
+
+      newWidth := 500 + (diffX * 400);
+      newHeight := 500 + (diffY * 400);
+
+      // only set the size if the width or height is increasing
+      if (newWidth > result.width) then
+        result.setSize(newWidth, result.height);
+
+      if (newHeight > result.height) then
+        result.setSize(result.width, newHeight);
+
+      // copy the area image to the resulting bitmap
+      bmpTemp := SPS_GetArea(newAreas[i + 1], RUNESCAPE_SURFACE);
+      bmpTemp.fastDrawTransparent(diffX * 400 + 1, diffY * 400 + 1, result);
+      bmpTemp.free();
+    end;
+
+    //result.saveToFile('C:/Simba/test.bmp');
+  except
+    Writeln('SPS_MergeAreas ERROR: '+ExceptionToString(ExceptionType, ExceptionParam));
+  end;
+
+  if (SPS_Debug) then
+    writeln('SPS_MergeAreas: Merged areas in '+toStr(getSystemTime - t)+' ms.');
 end;
 
 // SPS2
@@ -123,24 +226,25 @@ function SPS_GetMyPos(): TPoint;
 var
   Minimap: TMufasaBitmap;
   SmallMap: T3DIntegerArray;
-  t, map, FoundMatches: integer;
+  t, FoundMatches: integer;
   P: TPoint;
+  Searches: extended;
 begin
   Result := Point(-1, -1);
+
+  if (not LoggedIn) then
+    Exit;
 
   if (SPS_Tolerance < 1.0) then
     SPS_Tolerance := 600.0;
 
-  if (SPS_MinimumMatches = 0.0) then
-    SPS_MinimumMatches := 0.35;
-
-  if not LoggedIn then
-    Exit;
+  if (SPS_MatchesPercent = 0.0) then
+    SPS_MatchesPercent := 0.35;
 
   if (inRange(round(rs_GetCompassAngleDegrees), 10, 350)) then
     MakeCompass('N');
 
-  t := getSystemTime;
+  t := getSystemTime();
 
   Minimap := SPS_GatherMinimap;
   SPS_FilterMinimap(Minimap);
@@ -149,23 +253,25 @@ begin
   SmallMap := [];
   SmallMap := SPS_BitmapToMap(Minimap, SPS_SIDE_LENGTH);
 
-  map := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance, FoundMatches);
+  FoundMatches := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance);
+  Searches := ((Minimap.Width / SPS_SIDE_LENGTH) * (Minimap.Height / SPS_SIDE_LENGTH));
 {
-  writeln('fx: '+toStr(p.x)+' ~ on area: '+toStr(p.x * SPS_SIDE_LENGTH));
-  writeln('fy: '+toStr(p.y)+' ~ on area: '+toStr(p.y * SPS_SIDE_LENGTH));
+  writeln('fx: '+toStr(p.x)+' ~ on area: '+toStr(P.X * SPS_SIDE_LENGTH + (Minimap.Width / 2)));
+  writeln('fy: '+toStr(p.y)+' ~ on area: '+toStr(P.Y * SPS_SIDE_LENGTH + (Minimap.Width / 2)));
   writeln('matches: '+toStr(foundMatches));
-  writeln('area index: '+toStr(map));
+  writeln('searches: '+toStr(searches));
+  writeln('percent: '+toStr(FoundMatches / Searches));
 }
-  if ((FoundMatches / 706.0) > SPS_MinimumMatches) then
-    // the "* SPS_SIDE_LENGTH" is because P.X and P.Y are the coords of the grid piece the map was found in
-    Result := SPS_LocalToGlobal(SPS_Areas[map],
-                P.X * SPS_SIDE_LENGTH, P.Y * SPS_SIDE_LENGTH);
+  if ((FoundMatches / Searches) > SPS_MatchesPercent) then
+    Result := SPS_LocalToGlobal(SPS_Areas[0], // the top left of the total area
+                                P.x * SPS_SIDE_LENGTH + (Minimap.Width / 2),
+                                P.y * SPS_SIDE_LENGTH + (Minimap.Width / 2));
 
   Minimap.Free;
 
   t := (GetSystemTime - t);
   if (SPS_Debug) then
-    Writeln('[SPS] SPS_GetMyPos() Finished in '+ToStr(t)+' ms. Result = '+ToStr(Result));
+    Writeln('SPS_GetMyPos: Finished in '+ToStr(t)+' ms. Result = '+ToStr(Result));
 end;
 
 // Finds position P in minimap by checking your own location
@@ -318,7 +424,7 @@ end;
 // Walks from the player's current position to the point T
 function SPS_WindWalk(T: TPoint): Boolean;
 var
-  I, Tries: Integer;
+  Tries: Integer;
   M, P: TPoint;
   ctrlPoints: TPointArray;
 begin
@@ -339,29 +445,37 @@ begin
 end;
 
 // Sets up SPS; needs to be called if you want to switch RS surfaces
-procedure SPS_Setup(surface: integer; areas: TStringArray);
+function SPS_Setup(surface: integer; areas: TStringArray): boolean;
 var
-  l, i, t: integer;
+  t: integer;
   tmp: TMufasaBitmap;
 begin
   t := getSystemTime;
-  l := Length(areas);
-  SetLength(SPS_AreaMaps, l);
-  SetLength(SPS_Areas, l);
+
   SPS_Surface := surface;
   SPS_MultiMouse := true;
 
-  for i := 0 to (l - 1) do
+  if (length(areas) > 0) then
   begin
-    tmp := SPS_GetArea(areas[i], surface);
-    SPS_AreaMaps[i] := SPS_BitmapToMap(tmp, SPS_SIDE_LENGTH);
-    SPS_Areas[i] := areas[i];
-    tmp.free;
-  end;
+    if (surface = RUNESCAPE_SURFACE) then
+      tmp := SPS_MergeAreas(areas) // combine the SPS areas into 1; makes for a more accurate read
+    else
+      if (surface = RUNESCAPE_OTHER) then
+        if (length(areas) = 1) then
+          tmp := SPS_GetArea(areas[0], surface)
+        else
+          writeln('SPS_Setup(): Invalid dungeon areas. You can only select one!');
+
+    SPS_AreaMaps := SPS_BitmapToMap(tmp, SPS_SIDE_LENGTH);
+    SPS_Areas := SPS_QuickSortAreas(areas);
+    tmp.free();
+
+  end else
+    writeln('SPS_Setup(): ERROR: SPS areas are not set!');
 
   t := (getSystemTime - t);
 
   if (SPS_Debug) then
-    writeln('[SPS] SPS_Setup() took '+toStr(t)+' ms. Loaded '+toStr(L)+' areas.');
+    writeln('[SPS] SPS_Setup() took '+toStr(t)+' ms. Areas: '+toStr(SPS_Areas));
 end;
 

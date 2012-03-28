@@ -9,7 +9,6 @@ uses
 
 type
   T3DIntegerArray = array of T2DIntegerArray;
-  T4DIntegerArray = array of T3DIntegerArray;
 
 (**
  * Retruns true if the color boxes (B1 and B2) match within the tolerance (tol).
@@ -97,57 +96,51 @@ begin
 end;
 
 (**
- * Returns 4 variables:
+ * Returns 3 variables:
  *    fx, fy: The X and Y of the grid piece in SmallMap that best matches the LargeMap.
- *    FoundMatches: The number of color box matches found.
- *    Result: The index of the SPS_Area with the best match.
+ *    Result: The number of color box matches found.
  *)
-function SPS_FindMapInMap(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended; out FoundMatches: integer): integer; register;
+function SPS_FindMapInMap(out fx, fy: integer; LargeMap, SmallMap: T3DIntegerArray; tol: extended): integer; register;
 var
-  x, y, HighX, HighY, cm, L: integer;
+  x, y, HighX, HighY: integer;
   xx, yy: integer;
   Matching: integer;
   BoxesInViewX, BoxesInViewY: integer;
 begin
   fX := -1;
   fY := -1;
-  Result := -1;
-  FoundMatches := 0;
-  L := Length(LargeMap);
+  Result := 0;
+
   BoxesInViewX := Length(SmallMap);    // columns in the grid
   BoxesInViewY := Length(SmallMap[0]); // rows in the grid
 
   //writeln('SPS_FindMapInMap: BoxesInViewX: '+intToStr(BoxesInViewX));
   //writeln('SPS_FindMapInMap: BoxesInViewY: '+intToStr(BoxesInViewY));
 
-  for cm := 0 to (L - 1) do // loop through each SPS area (i.e. map piece)
-  begin
-    HighX := High(LargeMap[cm]) - BoxesInViewX;
-    HighY := High(LargeMap[cm][0]) - BoxesInViewY;
+  HighX := High(LargeMap) - BoxesInViewX;
+  HighY := High(LargeMap[0]) - BoxesInViewY;
 
-    //writeln('SPS_FindMapInMap: HighX: '+intToStr(HighX));
-    //writeln('SPS_FindMapInMap: HighY: '+intToStr(HighY));
+  //writeln('SPS_FindMapInMap: HighX: '+intToStr(HighX));
+  //writeln('SPS_FindMapInMap: HighY: '+intToStr(HighY));
 
-    for x := 0 to HighX do
-      for y := 0 to HighY do
+  for x := 0 to HighX do
+    for y := 0 to HighY do
+    begin
+      Matching := 0;
+
+      // compares the minimap to a chunch of the SPS_Area
+      for xx := (BoxesInViewX - 1) downto 0 do
+        for yy := (BoxesInViewY - 1) downto 0 do
+          if (SPS_ColorBoxesMatchInline(LargeMap[x+xx][y+yy], SmallMap[xx][yy], tol)) then
+            Matching := (Matching + 1);
+
+      if (Matching > Result) then
       begin
-        Matching := 0;
-
-        // compares the minimap to a chunch of the SPS_Area
-        for xx := BoxesInViewX - 1 downto 0 do
-          for yy := BoxesInViewY - 1 downto 0 do
-            if (SPS_ColorBoxesMatchInline(LargeMap[cm][x+xx][y+yy], SmallMap[xx][yy], tol)) then
-              Matching := (Matching + 1);
-
-        if (Matching > FoundMatches) then
-        begin
-          FoundMatches := Matching;
-          Result := cm;
-          fX := x;
-          fY := y;
-        end;
+        Result := Matching;
+        fX := x;
+        fY := y;
       end;
-  end;
+    end;
 end;
 
 (**
@@ -161,7 +154,7 @@ end;
 
 function GetTypeCount(): Integer; stdcall; export;
 begin
-  Result := 3;
+  Result := 1;
 end;
 
 function GetTypeInfo(x: Integer; var sType, sTypeDef: string): integer; stdcall; export;
@@ -170,16 +163,6 @@ begin
     0: begin
         sType := 'T3DIntegerArray';
         sTypeDef := 'array of T2DIntegerArray;';
-       end;
-
-    1: begin
-        sType := 'T4DIntegerArray';
-        sTypeDef := 'array of T3DIntegerArray;';
-       end;
-
-    2: begin
-         sType := 'TMufasaBitmapArray';
-         sTypeDef := 'array of TMufasaBitmap';
        end;
 
     else
@@ -209,7 +192,7 @@ begin
     0:
       begin
         ProcAddr := @SPS_FindMapInMap;
-        StrPCopy(ProcDef, 'function SPS_FindMapInMap(out fx, fy: integer; LargeMap: T4DIntegerArray; SmallMap: T3DIntegerArray; tol: extended; out FoundMatches: integer): integer;');
+        StrPCopy(ProcDef, 'function SPS_FindMapInMap(out fx, fy: integer; LargeMap, SmallMap: T3DIntegerArray; tol: extended): integer;');
       end;
     1:
       begin
