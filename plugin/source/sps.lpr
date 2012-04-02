@@ -147,7 +147,7 @@ end;
  * EXPORTING
  *)
 
-procedure SetPluginMemoryManager(MemMgr : TMemoryManager); stdcall; export;
+procedure SetPluginMemManager(MemMgr : TMemoryManager); stdcall; export;
 begin
   SetMemoryManager(MemMgr);
 end;
@@ -217,7 +217,7 @@ begin
   Result := x;
 end;
 
-exports SetPluginMemoryManager;
+exports SetPluginMemManager;
 exports GetTypeCount;
 exports GetTypeInfo;
 exports GetFunctionCount;
