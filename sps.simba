@@ -112,24 +112,33 @@ begin
 end;
 
 // Author: Coh3n
-// Sorts the areas from the upper left corner of the map
-function SPS_QuickSortAreas(areas: TStringArray): TStringArray;
+// Sorts the areas by columns, and sorts each column by rows
+// Example: ['1_5', '1_3', '0_5'] results ['0_5', '1_3', '1_5']
+function SPS_SortAreas(areas: TStringArray): TStringArray;
 var
-  i: integer;
+  i, j: integer;
   tpa: TPointArray;
 begin
   setLength(tpa, length(areas));
 
   tpa := SPS_TPAFromAreas(areas);
   clearDoubleTPA(tpa);
-  sortTPAFrom(tpa, point(0, 0));
+
+  sortTPAByX(tpa, true); // first sort by column number
+
+  // then sort the Y values for each column number
+  for i := 0 to high(tpa) do
+    for j := i to high(tpa) do
+      if (tpa[i].x = tpa[j].x) then
+        if (tpa[i].y > tpa[j].y) then
+          tSwap(tpa[i], tpa[j]);
 
   setLength(result, length(tpa));
 
   for i := 0 to high(tpa) do
     result[i] := SPS_AreaCoordsToString(tpa[i].x, tpa[i].y);
 
-  //writeln('SPS_QuickSortAreas: '+toStr(result));
+  writeln('SPS_SortAreas: '+toStr(result));
 end;
 
 // Loads the "Area" image
@@ -165,7 +174,7 @@ begin
   t := getSystemTime();
 
   // sort the areas from
-  newAreas := SPS_QuickSortAreas(areas);
+  newAreas := SPS_SortAreas(areas);
 
   l := length(newAreas);
   setLength(xVals, l);
@@ -366,7 +375,7 @@ begin
 end;
 
 // Walks blindly from the player's current position to the point T
-function SPS_BlindWalk(P: TPoint): Boolean;
+function SPS_WindWalk(P: TPoint): Boolean;
 var
   Tries: Integer;
   M: TPoint;
@@ -405,11 +414,14 @@ begin
       if (surface = RUNESCAPE_OTHER) then
         if (length(areas) = 1) then
           tmp := SPS_GetArea(areas[0], surface)
-        else
+        else begin
           writeln('SPS_Setup(): Invalid dungeon areas. You can only select one!');
+          exit;
+        end;
 
+    result := true;
     SPS_AreaMaps := SPS_BitmapToMap(tmp, SPS_SIDE_LENGTH);
-    SPS_Areas := SPS_QuickSortAreas(areas);
+    SPS_Areas := SPS_SortAreas(areas);
     tmp.free();
 
   end else
@@ -417,7 +429,7 @@ begin
 
   t := (getSystemTime - t);
 
-  if (SPS_Debug) then
+  if (SPS_Debug) and (result) then
     writeln('[SPS] SPS_Setup() took '+toStr(t)+' ms. Areas: '+toStr(SPS_Areas));
 end;
 
