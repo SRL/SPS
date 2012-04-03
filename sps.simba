@@ -352,7 +352,7 @@ begin
           if (SPS_MultiMouse) then
             MultiMouse(MM.X, MM.Y, 25, 3, false)
           else
-            Mouse(MM.X, MM.Y, 0, 0, mouse_Left);
+            Mouse(MM.X, MM.Y, 5, 5, mouse_Left);
 
           FFlag(Integer(I <> H) * 15);
 
@@ -365,76 +365,18 @@ begin
   end;
 end;
 
-// Generates a TPA from point(xs, ys) to point(xe, ye)
-function SPS_WindPath(xs, ys, xe, ye, gravity, wind, maxStep, targetArea: extended): TPointArray;
-var
-  veloX, veloY, windX, windY, veloMag, dist, randomDist, lastDist, step: extended;
-  lastX, lastY: integer;
-  sqrt2, sqrt3, sqrt5: extended;
-begin
-  sqrt2:= sqrt(2);
-  sqrt3:= sqrt(3);
-  sqrt5:= sqrt(5);
-
-  while (hypot(xs - xe, ys - ye) > 1) do
-  begin
-    dist := hypot(xs - xe, ys - ye);
-    wind := minE(wind, dist);
-
-    if (dist >= targetArea) then
-    begin
-      windX := (windX / sqrt3 + (random(round(wind) * 2 + 5) - wind) / sqrt5);
-      windY := (windY / sqrt3 + (random(round(wind) * 2 + 5) - wind) / sqrt5);
-    end else begin
-      windX := (windX / sqrt2);
-      windY := (windY / sqrt2);
-
-      if (maxStep < 15) then
-        maxStep := (random(15) + 15)
-      else
-        maxStep := (maxStep / sqrt5);
-    end;
-
-    veloX := (veloX + windX);
-    veloY := (veloY + windY);
-    veloX := (veloX + gravity * (xe - xs) / dist);
-    veloY := (veloY + gravity * (ye - ys) / dist);
-
-    if (hypot(veloX, veloY) > maxStep) then
-    begin
-      randomDist := (maxStep / 2.0 + random(round(maxStep) / 2));
-      veloMag := sqrt(veloX * veloX + veloY * veloY);
-      veloX := ((veloX / veloMag) * randomDist);
-      veloY := ((veloY / veloMag) * randomDist);
-    end;
-
-    lastX := round(xs);
-    lastY := round(ys);
-    xs := (xs + veloX);
-    ys := (ys + veloY);
-
-    setLength(result, length(result) + 1);
-    result[high(result)] := point(round(xs), round(ys));
-
-    step := hypot(xs - lastX, ys - lastY);
-    lastdist := dist;
-  end;
-end;
-
-// Walks from the player's current position to the point T
-function SPS_WindWalk(T: TPoint): Boolean;
+// Walks blindly from the player's current position to the point T
+function SPS_BlindWalk(P: TPoint): Boolean;
 var
   Tries: Integer;
-  M, P: TPoint;
+  M: TPoint;
   ctrlPoints: TPointArray;
 begin
-  P := T;
-
   repeat
     M := SPS_GetMyPos;
 
     if (Length(ctrlPoints) = 0) then
-      ctrlPoints := SPS_WindPath(M.X, M.Y, P.X, P.Y, 22.5, 12.5, 40, 10);
+      ctrlPoints := TPABetweenPoints(Point(M.X, M.Y), Point(P.X, P.Y), 20 + Random(15), 10);
 
     Inc(Tries);
     if (Tries > 20) then
