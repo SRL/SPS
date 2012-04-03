@@ -20,16 +20,13 @@ const
   RUNESCAPE_OTHER = 1;
   RUNESCAPE_OTHER_FOLDER = 'runescape_other\';
 
-  // Splits minimap/areas into squares of this side length; used for area recognition
-  SPS_SIDE_LENGTH = 4;
-
 // SPS Global variables
 var
   SPS_Debug, SPS_MultiMouse: boolean;
   SPS_Areas: TStringArray;
   SPS_AreaMaps: T3DIntegerArray; // Grids of the combined SPS_Areas
   SPS_Tolerance, SPS_MatchesPercent: extended;
-  SPS_Surface: integer;
+  SPS_Accuracy: integer; // Splits minimap/areas into squares of this side length; used for area recognition
 
 // Returns an image of the minimap in a TMufasaBitmap
 function SPS_GatherMinimap: TMufasaBitmap;
@@ -260,21 +257,21 @@ begin
   //DrawBitmapDebugImg(Minimap.Index);
   //DisplayDebugImgWindow(150, 150);
   SmallMap := [];
-  SmallMap := SPS_BitmapToMap(Minimap, SPS_SIDE_LENGTH);
+  SmallMap := SPS_BitmapToMap(Minimap, SPS_Accuracy);
 
   FoundMatches := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance);
-  Searches := ((Minimap.Width / SPS_SIDE_LENGTH) * (Minimap.Height / SPS_SIDE_LENGTH));
+  Searches := ((Minimap.Width / SPS_Accuracy) * (Minimap.Height / SPS_Accuracy));
 {
-  writeln('fx: '+toStr(p.x)+' ~ on area: '+toStr(P.X * SPS_SIDE_LENGTH + (Minimap.Width / 2)));
-  writeln('fy: '+toStr(p.y)+' ~ on area: '+toStr(P.Y * SPS_SIDE_LENGTH + (Minimap.Width / 2)));
+  writeln('fx: '+toStr(p.x)+' ~ on area: '+toStr(P.X * SPS_Accuracy + (Minimap.Width / 2)));
+  writeln('fy: '+toStr(p.y)+' ~ on area: '+toStr(P.Y * SPS_Accuracy + (Minimap.Width / 2)));
   writeln('matches: '+toStr(foundMatches));
   writeln('searches: '+toStr(searches));
   writeln('percent: '+toStr(FoundMatches / Searches));
 }
   if ((FoundMatches / Searches) > SPS_MatchesPercent) then
     Result := SPS_LocalToGlobal(SPS_Areas[0], // the top left of the total area
-                                P.x * SPS_SIDE_LENGTH + (Minimap.Width / 2),
-                                P.y * SPS_SIDE_LENGTH + (Minimap.Width / 2));
+                                P.x * SPS_Accuracy + (Minimap.Width / 2),
+                                P.y * SPS_Accuracy + (Minimap.Width / 2));
 
   Minimap.Free;
 
@@ -403,8 +400,8 @@ var
 begin
   t := getSystemTime;
 
-  SPS_Surface := surface;
   SPS_MultiMouse := true;
+  SPS_Accuracy := 4;
 
   if (length(areas) > 0) then
   begin
@@ -420,7 +417,7 @@ begin
         end;
 
     result := true;
-    SPS_AreaMaps := SPS_BitmapToMap(tmp, SPS_SIDE_LENGTH);
+    SPS_AreaMaps := SPS_BitmapToMap(tmp, SPS_Accuracy);
     SPS_Areas := SPS_SortAreas(areas);
     tmp.free();
 
