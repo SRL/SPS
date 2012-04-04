@@ -246,6 +246,30 @@ begin
     writeln('SPS_MergeAreas: Merged areas in '+toStr(getSystemTime - t)+' ms.');
 end;
 
+// Author: Coh3n
+// Returns an SPS area of lowest x and y value. Used for calculating the
+// player's correct position
+function SPS_GetTopLeftCoords(areas: TStringArray): string;
+var
+  tpa: TPointArray;
+begin
+  tpa := SPS_TPAFromAreas(areas);
+
+  if (length(tpa) <= 0) then
+  begin
+    result := '0_0';
+    exit;
+  end;
+
+  sortTPAByX(tpa, true);
+  result := toStr(tpa[0].x);
+
+  sortTPAByY(tpa, true);
+  result := result + '_'+toStr(tpa[0].y);
+
+  writeln('SPS_GetTopLeftCoords: '+result);
+end;
+
 // SPS2
 function SPS_GetMyPos(): TPoint;
 var
@@ -288,7 +312,7 @@ begin
   writeln('percent: '+toStr(FoundMatches / Searches));
 }
   if ((FoundMatches / Searches) > SPS_MatchesPercent) then
-    Result := SPS_LocalToGlobal(SPS_Areas[0], // the top left of the total area
+    Result := SPS_LocalToGlobal(SPS_GetTopLeftCoords(SPS_Areas), // the top left of the total area
                                 P.x * SPS_Accuracy + (Minimap.Width / 2),
                                 P.y * SPS_Accuracy + (Minimap.Width / 2));
 
