@@ -267,7 +267,7 @@ begin
   sortTPAByY(tpa, true);
   result := result + '_'+toStr(tpa[0].y);
 
-  writeln('SPS_GetTopLeftCoords: '+result);
+  //writeln('SPS_GetTopLeftCoords: '+result);
 end;
 
 // SPS2
@@ -415,7 +415,7 @@ begin
 end;
 
 // Walks blindly from the player's current position to the point T
-function SPS_WindWalk(P: TPoint): Boolean;
+function SPS_BlindWalk(P: TPoint): Boolean;
 var
   Tries: Integer;
   M: TPoint;
