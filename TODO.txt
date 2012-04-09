@@ -1,8 +1,6 @@
 SPS TO-DO List
 ~~~~~~~~~~~~~~
 
--- Add more dungeons
--- Not have to set SPS_Areas
 -- ** Work from any compass angle
 -- World walker
 
