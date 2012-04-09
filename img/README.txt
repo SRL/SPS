@@ -1,5 +1,5 @@
 SPS/img
 ~~~~~~~
 
-This file contains a different folder for each level or dungeon of runescape.  
-Since git doesn't allow empty directories, all the folders have been placed in dungeons.rar.
+This file contains all the images for different RS surfaces that can be used
+with SPS.
