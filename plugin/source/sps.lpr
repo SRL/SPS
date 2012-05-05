@@ -234,7 +234,7 @@ exports GetFunctionInfo;
 exports GetFunctionCallingConv;
 exports OnDetach;
 
-{$R *.res}
+//{$R *.res}
 
 begin
 end.
