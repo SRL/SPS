@@ -74,7 +74,7 @@ unknown:
 
 clean:
 	# TODO CLEAN
-	rm *.so rm *.dll
+	rm *.so rm *.dll -f
 
 $(binary)$(binary_extension):
 	$(CC) $(common_flags) $(platform_flags) -dLCL$(widgetset) $(units) $(includes) $(lazarusunits) -o$(binary)$(binary_extension) sps.lpr
