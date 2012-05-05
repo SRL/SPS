@@ -55,7 +55,7 @@ binary := sps.$(platform)
 ifeq ($(widgetset),win32)
 	binary_extension := .dll
 endif
-ifeq ($(widgetset),gtk)
+ifeq ($(uname_S),Linux)
 	binary_extension := .so
 endif
 lclplatpath := $(lazaruspath)/lcl/units/$(platform)/
@@ -73,7 +73,6 @@ unknown:
 	@echo Unable to auto-detect the OS and architecture you wish to build for, please specify target manually.
 
 clean:
-	# TODO CLEAN
 	rm *.so rm *.dll -f
 
 $(binary)$(binary_extension):
