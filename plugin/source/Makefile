@@ -82,11 +82,11 @@ $(binary)$(binary_extension):
 
 i386-linux:
 	$(MAKE) recursive_build platform="i386-linux" widgetset="gtk2" platform_flags="-Tlinux -Pi386 -dUseCThreads"
-	mv Simba.dbg Simba.i386-linux.dbg
+	mv sps.dbg Simba.i386-linux.dbg
 
 x86_64-linux:
 	$(MAKE) recursive_build platform="x86_64-linux" widgetset="gtk2" platform_flags="-Tlinux -Px86_64 -dUseCThreads"
-	mv Simba.dbg Simba.x86_64-linux.dbg
+	mv sps.dbg Simba.x86_64-linux.dbg
 
 i386-win32:
 	$(MAKE) recursive_build platform="i386-win32" widgetset="win32" platform_flags="-Twin32 -Pi386"
