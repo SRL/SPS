@@ -10,6 +10,9 @@ uses
 type
   T3DIntegerArray = array of T2DIntegerArray;
 
+var
+  OldMemoryManager: TMemoryMAnager;
+
 (**
  * Retruns true if the color boxes (B1 and B2) match within the tolerance (tol).
  *)
@@ -149,7 +152,13 @@ end;
 
 procedure SetPluginMemManager(MemMgr : TMemoryManager); stdcall; export;
 begin
+  GetMemoryManager(OldMemoryManager);
   SetMemoryManager(MemMgr);
+end;
+
+procedure OnDetach; stdcall; export;
+begin
+  SetMemoryManager(OldMemoryManager);
 end;
 
 function GetTypeCount(): Integer; stdcall; export;
@@ -223,7 +232,10 @@ exports GetTypeInfo;
 exports GetFunctionCount;
 exports GetFunctionInfo;
 exports GetFunctionCallingConv;
+exports OnDetach;
+
+{$R *.res}
 
 begin
 end.
-
+

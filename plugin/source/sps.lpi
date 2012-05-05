@@ -11,7 +11,6 @@
       <MainUnit Value="0"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
-      <Icon Value="0"/>
       <ActiveWindowIndexAtStart Value="0"/>
     </General>
     <i18n>
@@ -33,7 +32,7 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <Units Count="9">
+    <Units Count="12">
       <Unit0>
         <Filename Value="sps.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -41,8 +40,8 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="25"/>
-        <CursorPos X="8" Y="27"/>
+        <TopLine Value="1"/>
+        <CursorPos X="36" Y="14"/>
         <UsageCount Value="21"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -82,12 +81,10 @@
         <Filename Value="C:\Simba Source\Units\MMLCore\bitmaps.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="bitmaps"/>
-        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
         <TopLine Value="50"/>
         <CursorPos X="20" Y="136"/>
         <UsageCount Value="21"/>
-        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="C:\Simba Source\Units\MMLCore\mufasatypes.pas"/>
@@ -110,15 +107,39 @@
         <Filename Value="C:\Simba Source\Units\MMLCore\colour_conv.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="colour_conv"/>
-        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
         <TopLine Value="34"/>
         <CursorPos X="1" Y="1"/>
         <UsageCount Value="20"/>
-        <Loaded Value="True"/>
       </Unit8>
+      <Unit9>
+        <Filename Value="..\..\..\..\lazarus\lcl\fileutil.pas"/>
+        <UnitName Value="FileUtil"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="45" Y="29"/>
+        <UsageCount Value="10"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="Simba\Units\MMLCore\os_linux.pas"/>
+        <UnitName Value="os_linux"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="24"/>
+        <CursorPos X="76" Y="45"/>
+        <UsageCount Value="10"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="Simba\Units\MMLCore\mufasabase.pas"/>
+        <UnitName Value="mufasabase"/>
+        <EditorIndex Value="1"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="13"/>
+        <CursorPos X="81" Y="45"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit11>
     </Units>
-    <JumpHistory Count="2" HistoryIndex="1">
+    <JumpHistory Count="9" HistoryIndex="8">
       <Position1>
         <Filename Value="sps.lpr"/>
         <Caret Line="104" Column="7" TopLine="84"/>
@@ -127,6 +148,34 @@
         <Filename Value="sps.lpr"/>
         <Caret Line="29" Column="23" TopLine="27"/>
       </Position2>
+      <Position3>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="38" Column="55" TopLine="25"/>
+      </Position3>
+      <Position4>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="28" Column="61" TopLine="1"/>
+      </Position4>
+      <Position5>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="6" Column="27" TopLine="1"/>
+      </Position5>
+      <Position6>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="19" Column="73" TopLine="1"/>
+      </Position6>
+      <Position7>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="7" Column="19" TopLine="1"/>
+      </Position7>
+      <Position8>
+        <Filename Value="Simba\Units\MMLCore\mufasabase.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position8>
+      <Position9>
+        <Filename Value="Simba\Units\MMLCore\mufasabase.pas"/>
+        <Caret Line="32" Column="55" TopLine="13"/>
+      </Position9>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
@@ -136,8 +185,8 @@
       <Filename Value="sps"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType);C:\Lazarus\components\mouseandkeyinput\;C:\Simba Source\Units\MMLCore\;C:\Simba Source\Units\Misc\DCPCrypt\"/>
+      <IncludeFiles Value="$(ProjOutDir);Simba\Projects\Simba"/>
+      <OtherUnitFiles Value="$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType);$(LazarusDir)\components\mouseandkeyinput;Simba\Units\MMLCore;Simba\Units\Misc\DCPCrypt;Simba\Units\Linux"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
@@ -154,6 +203,7 @@
       <CompilerMessages>
         <UseMsgFile Value="True"/>
       </CompilerMessages>
+      <CustomOptions Value="-fPIC"/>
       <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>
@@ -170,4 +220,4 @@
       </Item3>
     </Exceptions>
   </Debugging>
-</CONFIG>
+</CONFIG>
