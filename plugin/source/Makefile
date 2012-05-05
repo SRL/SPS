@@ -55,7 +55,10 @@ binary := sps.$(platform)
 ifeq ($(widgetset),win32)
 	binary_extension := .dll
 endif
-ifeq ($(uname_S),Linux)
+ifeq ($(our_target),i386-linux)
+	binary_extension := .so
+endif
+ifeq ($(our_target),x86_64-linux)
 	binary_extension := .so
 endif
 lclplatpath := $(lazaruspath)/lcl/units/$(platform)/
