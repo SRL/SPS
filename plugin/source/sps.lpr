@@ -2,6 +2,12 @@ library sps;
 
 {$mode objfpc}{$H+}
 
+{$macro on}
+{$define callconv:=
+    {$IFDEF WINDOWS}{$IFDEF CPU32}cdecl;{$ELSE}{$ENDIF}{$ENDIF}
+    {$IFDEF LINUX}{$IFDEF CPU32}cdecl;{$ELSE}{$ENDIF}{$ENDIF}
+}
+
 uses
   classes, sysutils, fileutil, math, interfaces, mufasatypes, bitmaps,
   colour_conv
@@ -11,7 +17,8 @@ type
   T3DIntegerArray = array of T2DIntegerArray;
 
 var
-  OldMemoryManager: TMemoryMAnager;
+  OldMemoryManager: TMemoryManager;
+  memisset: Boolean = False;
 
 (**
  * Retruns true if the color boxes (B1 and B2) match within the tolerance (tol).
@@ -40,7 +47,7 @@ end;
  *    Result[1] = Green
  *    Result[2] = Blue
  *)
-function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray; register;
+function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray; callconv
 var
   x, y, C, R, G, B: integer;
 begin
@@ -80,7 +87,7 @@ end;
 (**
  * Converts the bitmap (bmp) to a 'grid' of color boxes.
  *)
-function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray; register;
+function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray; callconv
 var
   X, Y, HighX, HighY: integer;
 begin
@@ -103,7 +110,7 @@ end;
  *    fx, fy: The X and Y of the grid piece in SmallMap that best matches the LargeMap.
  *    Result: The number of color box matches found.
  *)
-function SPS_FindMapInMap(out fx, fy: integer; LargeMap, SmallMap: T3DIntegerArray; tol: extended): integer; register;
+function SPS_FindMapInMap(out fx, fy: integer; LargeMap, SmallMap: T3DIntegerArray; tol: extended): integer; callconv
 var
   x, y, HighX, HighY: integer;
   xx, yy: integer;
@@ -150,28 +157,36 @@ end;
  * EXPORTING
  *)
 
-procedure SetPluginMemManager(MemMgr : TMemoryManager); stdcall; export;
+function GetPluginABIVersion: Integer; callconv export;
 begin
-  GetMemoryManager(OldMemoryManager);
-  SetMemoryManager(MemMgr);
+  Result := 2;
 end;
 
-procedure OnDetach; stdcall; export;
+procedure SetPluginMemManager(MemMgr : TMemoryManager); callconv export;
+begin
+  if memisset then
+    exit;
+  GetMemoryManager(OldMemoryManager);
+  SetMemoryManager(MemMgr);
+  memisset := true;
+end;
+
+procedure OnDetach; callconv export;
 begin
   SetMemoryManager(OldMemoryManager);
 end;
 
-function GetTypeCount(): Integer; stdcall; export;
+function GetTypeCount(): Integer; callconv export;
 begin
   Result := 1;
 end;
 
-function GetTypeInfo(x: Integer; var sType, sTypeDef: string): integer; stdcall; export;
+function GetTypeInfo(x: Integer; var sType, sTypeDef: PChar): integer; callconv export;
 begin
   case x of
     0: begin
-        sType := 'T3DIntegerArray';
-        sTypeDef := 'array of T2DIntegerArray;';
+        StrPCopy(sType, 'T3DIntegerArray');
+        StrPCopy(sTypeDef, 'array of T2DIntegerArray;');
        end;
 
     else
@@ -181,21 +196,12 @@ begin
   Result := x;
 end;
 
-function GetFunctionCount(): Integer; stdcall; export;
+function GetFunctionCount(): Integer; callconv export;
 begin
   Result := 4;
 end;
 
-function GetFunctionCallingConv(x : Integer) : Integer; stdcall; export;
-begin
-  Result := 0;
-
-  case x of
-    0..3: Result := 1;
-  end;
-end;
-
-function GetFunctionInfo(x: Integer; var ProcAddr: Pointer; var ProcDef: PChar): Integer; stdcall; export;
+function GetFunctionInfo(x: Integer; var ProcAddr: Pointer; var ProcDef: PChar): Integer; callconv export;
 begin
   case x of
     0:
@@ -226,16 +232,16 @@ begin
   Result := x;
 end;
 
+exports GetPluginABIVersion;
 exports SetPluginMemManager;
 exports GetTypeCount;
 exports GetTypeInfo;
 exports GetFunctionCount;
 exports GetFunctionInfo;
-exports GetFunctionCallingConv;
 exports OnDetach;
 
 //{$R *.res}
 
 begin
 end.
-
+
