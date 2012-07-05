@@ -238,8 +238,10 @@ end;
 
 exports GetPluginABIVersion;
 exports SetPluginMemManager;
+{
 exports GetTypeCount;
 exports GetTypeInfo;
+}
 exports GetFunctionCount;
 exports GetFunctionInfo;
 exports OnDetach;
