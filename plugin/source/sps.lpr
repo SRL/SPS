@@ -176,11 +176,14 @@ begin
   SetMemoryManager(OldMemoryManager);
 end;
 
+{
 function GetTypeCount(): Integer; callconv export;
 begin
   Result := 1;
 end;
+}
 
+{
 function GetTypeInfo(x: Integer; var sType, sTypeDef: PChar): integer; callconv export;
 begin
   case x of
@@ -195,6 +198,7 @@ begin
 
   Result := x;
 end;
+}
 
 function GetFunctionCount(): Integer; callconv export;
 begin
