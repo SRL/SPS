@@ -47,11 +47,11 @@ end;
  *    Result[1] = Green
  *    Result[2] = Blue
  *)
-function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray; callconv
+procedure SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer; var res: TIntegerArray); callconv
 var
   x, y, C, R, G, B: integer;
 begin
-  SetLength(Result, 3);
+  SetLength(Res, 3);
 
   for x := (x1 + SideLength - 1) downto x1 do
     for y := (y1 + SideLength - 1) downto y1 do
@@ -59,9 +59,9 @@ begin
       C := bmp.fastGetPixel(x, y);
       ColorToRGB(C, R, G, B);
 
-      Result[0] := Result[0] + R;
-      Result[1] := Result[1] + G;
-      Result[2] := Result[2] + B;
+      Res[0] := Res[0] + R;
+      Res[1] := Res[1] + G;
+      Res[2] := Res[2] + B;
     end;
 end;
 
@@ -87,20 +87,19 @@ end;
 (**
  * Converts the bitmap (bmp) to a 'grid' of color boxes.
  *)
-function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray; callconv
+procedure SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer; var res: T3DIntegerArray); callconv
 var
   X, Y, HighX, HighY: integer;
 begin
   HighX := Trunc(bmp.Width / (SideLength * 1.0));
   HighY := Trunc(bmp.Height / (SideLength * 1.0));
-
-  SetLength(Result, HighX);
+  SetLength(Res, HighX);
   for X := 0 to HighX - 1 do
   begin
-    SetLength(Result[X], HighY);
+    SetLength(Res[X], HighY);
     for Y := 0 to HighY - 1 do
     begin
-      Result[X][Y] := SPS_MakeColorBox(bmp, X * SideLength, Y * SideLength, SideLength);
+      SPS_MakeColorBox(bmp, X * SideLength, Y * SideLength, SideLength, Res[X][Y]);
     end;
   end;
 end;
@@ -216,12 +215,12 @@ begin
     1:
       begin
         ProcAddr := @SPS_BitmapToMap;
-        StrPCopy(ProcDef, 'function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray;');
+        StrPCopy(ProcDef, 'procedure SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer; var res: T3DIntegerArray);');
       end;
     2:
       begin
         ProcAddr := @SPS_MakeColorBox;
-        StrPCopy(ProcDef, 'function SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer): TIntegerArray;');
+        StrPCopy(ProcDef, 'procedure SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer; var res: TIntegerArray);');
       end;
     3:
       begin
@@ -235,6 +234,8 @@ begin
 
   Result := x;
 end;
+
+exports SPS_FindMapInMap, SPS_BitmapToMap, SPS_MakeColorBox, SPS_FilterMinimap;
 
 exports GetPluginABIVersion;
 exports SetPluginMemManager;

@@ -299,8 +299,14 @@ begin
   SPS_FilterMinimap(Minimap);
   //DrawBitmapDebugImg(Minimap.Index);
   //DisplayDebugImgWindow(150, 150);
+
+  {$IFDEF SIMBAMAJOR990}
+  SetLength(SmallMap, 0); // Using this instead of SmallMap := [];
+  SPS_BitmapToMap(Minimap, SPS_Accuracy, SmallMap);
+  {$ELSE}
   SmallMap := [];
   SmallMap := SPS_BitmapToMap(Minimap, SPS_Accuracy);
+  {$ENDIF}
 
   FoundMatches := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance);
   Searches := ((Minimap.Width / SPS_Accuracy) * (Minimap.Height / SPS_Accuracy));
@@ -460,7 +466,11 @@ begin
         end;
 
     result := true;
+    {$IFDEF SIMBAMAJOR990}
+    SPS_BitmapToMap(tmp, SPS_Accuracy, SPS_AreaMaps);
+    {$ELSE}
     SPS_AreaMaps := SPS_BitmapToMap(tmp, SPS_Accuracy);
+    {$ENDIF}
 
     if (surface = RUNESCAPE_SURFACE) then
       SPS_Areas := SPS_SortAreas(areas)
