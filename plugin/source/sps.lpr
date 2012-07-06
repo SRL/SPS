@@ -95,13 +95,13 @@ begin
   HighX := Trunc(bmp.Width / (SideLength * 1.0));
   HighY := Trunc(bmp.Height / (SideLength * 1.0));
   writeln('hoi');
-  SetLength(Result, HighX);
+  SetLength(Res, HighX);
   for X := 0 to HighX - 1 do
   begin
-    SetLength(Result[X], HighY);
+    SetLength(Res[X], HighY);
     for Y := 0 to HighY - 1 do
     begin
-      Result[X][Y] := SPS_MakeColorBox(bmp, X * SideLength, Y * SideLength, SideLength);
+      Res[X][Y] := SPS_MakeColorBox(bmp, X * SideLength, Y * SideLength, SideLength);
     end;
   end;
   writeln('before leaving');
