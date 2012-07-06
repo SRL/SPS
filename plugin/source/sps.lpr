@@ -68,7 +68,7 @@ end;
 (**
  * Filters the edges of the minimap so only the circle appears as colors.
  *)
-procedure SPS_FilterMinimap(var Minimap: TMufasaBitmap); register;
+procedure SPS_FilterMinimap(var Minimap: TMufasaBitmap); callconv
 var
   W, H, x, y: integer;
 begin
