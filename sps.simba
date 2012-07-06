@@ -152,8 +152,8 @@ begin
   end;
 
   try
-	  Result := TMufasaBitmap.Create;
-		Result.LoadFromFile(SPS_IMG_PATH + s + Area + SPS_IMG_FMT);
+    Result := TMufasaBitmap.Create;
+    Result.LoadFromFile(SPS_IMG_PATH + s + Area + SPS_IMG_FMT);
   except
     Writeln('SPS_GetArea ERROR: '+ExceptionToString(ExceptionType, ExceptionParam));
   end;
@@ -299,8 +299,10 @@ begin
   SPS_FilterMinimap(Minimap);
   //DrawBitmapDebugImg(Minimap.Index);
   //DisplayDebugImgWindow(150, 150);
-  SmallMap := [];
-  SmallMap := SPS_BitmapToMap(Minimap, SPS_Accuracy);
+
+  // SmallMap := [];
+  SetLength(SmallMap, 0); // Using this instead of SmallMap := [];
+  SPS_BitmapToMap(Minimap, SPS_Accuracy, SmallMap);
 
   FoundMatches := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance);
   Searches := ((Minimap.Width / SPS_Accuracy) * (Minimap.Height / SPS_Accuracy));
@@ -460,7 +462,7 @@ begin
         end;
 
     result := true;
-    SPS_AreaMaps := SPS_BitmapToMap(tmp, SPS_Accuracy);
+    SPS_BitmapToMap(tmp, SPS_Accuracy, SPS_AreaMaps);
 
     if (surface = RUNESCAPE_SURFACE) then
       SPS_Areas := SPS_SortAreas(areas)
