@@ -87,13 +87,14 @@ end;
 (**
  * Converts the bitmap (bmp) to a 'grid' of color boxes.
  *)
-function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray; callconv
+procedure SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer; var res: T3DIntegerArray); callconv
 var
   X, Y, HighX, HighY: integer;
 begin
+  writeln('bmp:', qword(@bmp));
   HighX := Trunc(bmp.Width / (SideLength * 1.0));
   HighY := Trunc(bmp.Height / (SideLength * 1.0));
-
+  writeln('hoi');
   SetLength(Result, HighX);
   for X := 0 to HighX - 1 do
   begin
@@ -103,6 +104,7 @@ begin
       Result[X][Y] := SPS_MakeColorBox(bmp, X * SideLength, Y * SideLength, SideLength);
     end;
   end;
+  writeln('before leaving');
 end;
 
 (**
@@ -216,7 +218,7 @@ begin
     1:
       begin
         ProcAddr := @SPS_BitmapToMap;
-        StrPCopy(ProcDef, 'function SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer): T3DIntegerArray;');
+        StrPCopy(ProcDef, 'procedure SPS_BitmapToMap(bmp: TMufasaBitmap; SideLength: integer; var res: T3DIntegerArray);');
       end;
     2:
       begin
@@ -235,6 +237,8 @@ begin
 
   Result := x;
 end;
+
+exports SPS_FindMapInMap, SPS_BitmapToMap, SPS_MakeColorBox, SPS_FilterMinimap;
 
 exports GetPluginABIVersion;
 exports SetPluginMemManager;
