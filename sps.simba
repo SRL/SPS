@@ -381,22 +381,25 @@ end;
 // Walks the path "Path"; always walks to the furthest point possible
 function SPS_WalkPath(Path: TPointArray): boolean;
 var
-  I, H, T, D: integer;
-  P, MM: TPoint;
+  I, H, T, D, Fails: integer;
+  P, MM, MMF: TPoint;
 begin
   H := High(Path);
   T := GetSystemTime + 20000 + Random(5000);
-
-  while (not Result) and (GetSystemTime < T) do
+  Fails := 0;
+  while (not Result) and (GetSystemTime < T) and (Fails < 5) do
   begin
     RunEnergy(20);
-
-    P := SPS_GetMyPos;
+    if P<> SPS_GetMyPos then
+      P := SPS_GetMyPos
+    else
+      Exit;
     for I := H downto 0 do
     begin
       MM.X := MMCX + Path[I].X - P.X;
       MM.Y := MMCY + Path[I].Y - P.Y;
-
+      if MM = MMF then
+        Inc(Fails);
       D := Distance(MM.X, MM.Y, MMCX, MMCY);
 
       if (D < 10) then
@@ -408,7 +411,7 @@ begin
             MultiMouse(MM.X, MM.Y, 25, 3, false)
           else
             Mouse(MM.X, MM.Y, 5, 5, mouse_Left);
-
+          MMF := MM;
           FFlag(Integer(I <> H) * 15);
 
           T := getSystemTime + 20000 + Random(1000);
@@ -428,8 +431,10 @@ var
   ctrlPoints: TPointArray;
 begin
   repeat
-    M := SPS_GetMyPos;
-
+    if M <> SPS_GetMyPos then
+      M := SPS_GetMyPos
+    else
+      Exit;
     if (Length(ctrlPoints) = 0) then
       ctrlPoints := TPABetweenPoints(Point(M.X, M.Y), Point(P.X, P.Y), 20 + Random(15), 10);
 
@@ -488,5 +493,4 @@ begin
   if (SPS_Debug) and (result) then
     writeln('[SPS] SPS_Setup() took '+toStr(t)+' ms. Areas: '+toStr(SPS_Areas));
 end;
-
 
