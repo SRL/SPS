@@ -27,15 +27,14 @@
 
 program runescape_surface_creator;
 {$DEFINE SMART}
-{$i srl/srl.scar}
-{$i srl/srl/misc/paintsmart.scar}
+{$i srl/srl.simba}
 
 const
-  MAP_CREATE = false; // true to create the map
-  MAP_SLICE  = true;  // true to slice the map into areas
+  MAP_CREATE = true; // true to create the map
+  MAP_SLICE  = false;  // true to slice the map into areas
 
 const
-  PATH_MAP = appPath + 'runescape_surface\runescape_surface.bmp'; // where to save the world map
+  PATH_MAP = appPath + 'runescape_surface\runescape_surface.png'; // where to save the world map
   PATH_IMG = appPath + 'runescape_surface\';                      // where to save the sps areas
 
   // used so the screenshots line up properly
@@ -319,15 +318,6 @@ begin
 
   if (MAP_CREATE) then
   begin
-    {$IFDEF SMART}
-    SMART_Server := 1;
-    SMART_Members := False;
-    SMART_Signed := True;
-    SMART_SuperDetail := False;
-    SMART_SetupDebug();
-    clearRSCanvas(SMART_Canvas.canvas);
-    {$ENDIF}
-
     activateClient();
     setupSRL();
 
