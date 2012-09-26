@@ -219,7 +219,7 @@ begin
   bmpWorld.setSize(w * COLUMNS - OVERLAP_EDGE_X, h * ROWS - OVERLAP_EDGE_Y);
   bmpWorld.fastDrawClear(clBlack); // transparent colour
 
-  setPieces()
+  setPieces();
 end;
 
 // splits the map into SPS areas 500x500 pixels; overlap 100 pixels on each side
