@@ -16,6 +16,18 @@
     * Reccommend running on a bad account as it uses exact coord clicking
     * Doesn't require you to login if you're only slicing the map
 
+  IMPORTANT:
+  ~~~~~~~~~~
+
+    * ALWAYS keep the starting position the same if you can.  This ensures
+      compatibility.
+    * ALWAYS keep the same number of ROWS and COLUMNS if you can.  This ensures
+      compatibility.
+    * ALWAYS check and make sure the new areas match the old ones (i.e.
+      point(1000, 1000) is same (or very close) on both maps.
+    * This tool is meant to make a map of the RS surface.  It can be used to
+      make maps for dungeons, but will require some more editing.
+
   CREDITS:
   ~~~~~~~~
 
@@ -30,26 +42,32 @@ program runescape_surface_creator;
 {$i srl/srl.simba}
 
 const
-  MAP_CREATE = true; // true to create the map
-  MAP_SLICE  = false;  // true to slice the map into areas
+  MAP_CREATE = false; // true to create the map
+  MAP_SLICE  = true; // true to slice the map into areas
 
 const
   PATH_MAP = appPath + 'runescape_surface\runescape_surface.png'; // where to save the world map
   PATH_IMG = appPath + 'runescape_surface\';                      // where to save the sps areas
 
-  // used so the screenshots line up properly
-  OVERLAP_X = 54;
-  OVERLAP_Y = 51;
-
-  OVERLAP_EDGE_X = 399 - OVERLAP_X; // overlap for last column
-  OVERLAP_EDGE_Y = 255 - OVERLAP_Y; // last row
-
   COLUMNS = 14; // x
   ROWS    = 17; // y
 
+  // used so screenshots are merged properly
+  OVERLAP_EDGE_X = 397; // overlap for last column
+  OVERLAP_EDGE_Y = 201; // overlap for last row
+  OVERLAP_X      = 55;  // so screenshots line up properly
+  OVERLAP_Y1     = 58;  // for whatever reason, there are 2 y-offsets
+  OVERLAP_Y2     = 54;
+
+  // values to cut off each side of the map's border
+  BORDER_LEFT   = 7;   // left border
+  BORDER_RIGHT  = 160; // right border + overview map
+  BORDER_TOP    = 7;   // top border
+  BORDER_BOTTOM = 43;  // bottom legend
+
   // used to get rid of the border, X, and legend
-  SIZE_BORDER = 167;
-  SIZE_LEGEND = 50;
+  SIZE_BORDER = BORDER_LEFT + BORDER_RIGHT;
+  SIZE_LEGEND = BORDER_TOP + BORDER_BOTTOM;
 
 var
   bmpWorld: TMufasaBitmap;
@@ -107,13 +125,9 @@ var
   topLeft: TPoint;
 begin
   // starting point (top left)
-  topLeft.x := 616;
+  topLeft.x := 617;
   topLeft.y := 324;
-{
-  // used for testing (gather a small area)
-  topLeft.x := 655;
-  topLeft.y := 375;
-}
+
   if (column = COLUMNS - 1) and (row = ROWS - 1) then
   begin
     mouse(752, 448, 0, 0, true); // bottom right corner
@@ -135,12 +149,6 @@ begin
   mouse(topLeft.x + (11 * column), topLeft.y + (8 * row), 0, 0, true);
 end;
 
-// values to cut off each side of the map's border
-const
-  LEFT   = 7;   // left border
-  RIGHT  = 160; // right border + overview map
-  TOP    = 7;   // top border
-  BOTTOM = 43;  // bottom legend
 // returns the current cropped map piece as a TMufasaBitmap
 function getMufaPiece(): TMufasaBitmap;
 var
@@ -148,78 +156,60 @@ var
 begin
   getClientDimensions(w, h);
   bmp := createBitmap(w, h);
-  copyClientToBitmap(bmp, LEFT, TOP, w - RIGHT, h - BOTTOM);
+  copyClientToBitmap(bmp, BORDER_LEFT, BORDER_TOP, w - BORDER_RIGHT, h - BORDER_BOTTOM);
 
   result := getMufasaBitmap(bmp);
-
-  //result.saveToFile(appPath + 'dwarven2.png');
 end;
 
 // gathers all the map pieces and draws them to the bmpWorld bitmap
-procedure setPieces();
+procedure createMap();
 var
   bmp: TMufasaBitmap;
-  x, y, w, h: integer;
-  drawn: boolean;
+  w, h, x, y: integer;
 begin
-  writeln('Creating map.. this may take a couple minutes');
-
-  getClientDimensions(w, h);
-
-  w := (w - SIZE_BORDER - OVERLAP_X);
-  h := (h - SIZE_LEGEND - OVERLAP_Y);
+  bmpWorld := TMufasaBitmap.create();
+  bmpWorld.setSize(10000, 10000); // map will be resized later
 
   for x := 0 to (COLUMNS - 1) do
     for y := 0 to (ROWS - 1) do
     begin
-      drawn := false;
       goPosition(x, y);
 
       bmp := getMufaPiece();
 
-      // bottom right corner
-      if (x = COLUMNS - 1) and (y = ROWS - 1) then
-      begin
-        bmp.fastDrawTransparent(x * w - OVERLAP_EDGE_X, y * h - OVERLAP_EDGE_Y, bmpWorld);
-        drawn := true;
-      end;
+      if (y = 0) then
+        h := bmp.height;
 
-      // right edge
+      // increase the height of the map
+      if (y mod 3 = 0) and (y > 0) then
+        h := h + bmp.height - OVERLAP_Y2
+      else
+        if (y > 0) then
+          h := h + bmp.height - OVERLAP_Y1;
+
+      // increase the width of the map
+      if (x > 0) then
+        w := (x + 1) * bmp.width - (OVERLAP_X * x)
+      else
+        w := bmp.width;
+
+      // can't explain why this one is off by two
+      if (x = 1) then
+        w := w + 2;
+
+      // right edge overlap
       if (x = COLUMNS - 1) then
-      begin
-        bmp.fastDrawTransparent(x * w - OVERLAP_EDGE_X, y * h, bmpWorld);
-        drawn := true;
-      end;
+        w := w - OVERLAP_EDGE_X;
 
-      // bottom edge
+      // bottom edge overlap
       if (y = ROWS - 1) then
-      begin
-        bmp.fastDrawTransparent(x * w, y * h - OVERLAP_EDGE_Y, bmpWorld);
-        drawn := true;
-      end;
+        h := h - OVERLAP_EDGE_Y;
 
-      if (not drawn) then
-        bmp.fastDrawTransparent(x * w, y * h, bmpWorld);
-
+      bmp.fastDrawTransparent(w - bmp.width + x, h - bmp.height + y, bmpWorld);
       bmp.free();
     end;
-end;
 
-// creates the world map
-procedure createMap();
-var
-  w, h: integer;
-begin
-  bmpWorld := TMufasaBitmap.create();
-  getClientDimensions(w, h);
-
-  w := (w - SIZE_BORDER - OVERLAP_X);
-  h := (h - SIZE_LEGEND - OVERLAP_Y);
-
-  bmpWorld.setSize(w * COLUMNS - OVERLAP_EDGE_X, h * ROWS - OVERLAP_EDGE_Y);
-  bmpWorld.fastDrawClear(clBlack); // transparent colour
-
-  setPieces();
+  bmpWorld.setSize(w, h);
 end;
 
 // splits the map into SPS areas 500x500 pixels; overlap 100 pixels on each side
@@ -234,20 +224,20 @@ begin
   t := getSystemTime();
 
   // SPS areas that don't have any land on them (no point in saving them)
-  blanks := ['0_0', '0_4', '0_5', '0_6', '0_7', '0_8', '0_14', '0_15', '0_16',
-    '1_0', '1_4', '1_6', '1_14', '1_15', '1_16', '2_0', '2_1', '2_14', '2_15',
+  blanks := ['0_0', '0_4', '0_5', '0_6', '0_14', '0_15', '0_16',
+    '1_0', '1_4', '1_14', '1_15', '1_16', '2_0', '2_1', '2_14', '2_15',
     '2_16', '3_0', '3_1', '3_14', '3_15', '3_16', '4_0', '4_1', '4_14', '4_15',
-    '4_16', '3_14', '3_15', '3_16', '7_0', '8_0', '8_13', '9_0', '9_13', '9_14',
-    '9_15', '9_16', '10_0', '10_13', '10_14', '10_15', '10_16', '11_0', '11_15',
-    '11_16', '12_0', '12_15', '12_16', '13_0', '13_15', '13_16', '14_0', '14_1',
-    '14_2', '14_14', '14_15', '14_16', '15_0', '15_1', '15_2', '15_3', '15_4',
-    '15_13', '15_14', '15_15', '15_16', '16_0', '16_1', '16_2', '16_3', '16_4',
+    '4_16', '7_0', '8_0', '9_0', '9_13', '9_14',
+    '9_15', '9_16', '10_0', '10_15', '10_16', '11_0',
+    '11_16', '12_0', '12_16', '13_0', '13_15', '13_16', '14_0', '14_1',
+    '14_2', '14_13', '14_14', '14_15', '14_16', '15_0', '15_1', '15_2', '15_3',
+    '15_13', '15_14', '15_15', '15_16', '16_0', '16_1', '16_2', '16_3',
     '16_13', '16_14', '16_15', '16_16', '17_0', '17_1', '17_2', '17_3', '17_4',
     '17_7', '17_8', '17_9', '17_14', '17_15', '17_16'];
 
   forceDirectories(PATH_IMG);
 
-  bmpMap := TMufasaBitmap.Create();
+  bmpMap := TMufasaBitmap.create();
   bmpMap.loadFromFile(PATH_MAP);
 
   for x := 0 to 17 do
@@ -277,7 +267,7 @@ begin
       end;
 
       bmpTemp := bmpMap.copy(x1, y1, x2, y2);
-      bmpTemp.saveToFile(PATH_IMG + toStr(x)+'_'+toStr(y)+'.bmp');
+      bmpTemp.saveToFile(PATH_IMG + toStr(x)+'_'+toStr(y)+'.png');
       bmpTemp.free();
 
       inc(i);
@@ -301,6 +291,7 @@ begin
   openOverview();
 
   createMap();
+
   bmpWorld.saveToFile(PATH_MAP);
   bmpWorld.free();
 
