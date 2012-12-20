@@ -2,7 +2,8 @@
 SPS ~ SRL Positioning System
 ============================
 
-Concept and original work done by marpis @ SRL-Forums.
+Concept and original work done by marpis @ SRL-Forums.  Work continued by Coh3n
+and members of the SRL community.
 
 *)
 
@@ -20,14 +21,21 @@ const
   RUNESCAPE_OTHER = 1;
   RUNESCAPE_OTHER_FOLDER = 'runescape_other\';
 
+// User defined SPS global variables
+var
+  SPS_Debug: boolean;
+  SPS_MultiMouse: boolean; // simulates a human like "spam-click" when walking
+  SPS_AnyAngle: boolean;   // true = work at any angle; false = only north
+  SPS_ClickNorth: boolean; // call ClickNorth instead of MakeCompass to set the compass to north
+
 // SPS Global variables
 var
-  SPS_Debug, SPS_MultiMouse: boolean;
   SPS_Areas: TStringArray;
   SPS_AreaMaps: T3DIntegerArray; // Grids of the combined SPS_Areas
   SPS_Tolerance, SPS_MatchesPercent: extended;
   SPS_Accuracy: integer; // Splits minimap/areas into squares of this side length; used for area recognition
 
+// Author: marpis & Coh3n
 // Returns an image of the minimap in a TMufasaBitmap
 function SPS_GatherMinimap: TMufasaBitmap;
 var
@@ -47,6 +55,43 @@ begin
   end;
 end;
 
+// Author: Ollybest & J J
+// gets the rotated RS minimap and rotates to face north
+// needed for SPS to work at any compass angle
+function SPS_RotateMinimap: TMufasaBitmap;
+var
+  W, H, t: Integer;
+  mmBMP, rBMP: TMufasaBitmap;
+  MiddleBMP: TPoint;
+begin
+  try
+    t := getSystemTime();
+
+    //gathering minimap
+    mmBMP := SPS_GatherMinimap;
+
+    //rotating minimap
+    rBMP := GetMufasaBitmap(RotateBitmap(mmBMP.index, 0-rs_GetCompassAngleRadians))
+
+    //getting the middle of the rotated bitmap
+    GetBitmapSize(rBMP.Index, W, H);
+    MiddleBMP := Point(W/2, H/2);
+
+    //creating the result by using a 74 radius around the centre
+    Result := rbmp.Copy(MiddleBMP.X-74, MiddleBMP.Y-74, MiddleBMP.X+74, MiddleBMP.Y+74);
+
+    mmBMP.free
+    rbmp.free
+
+    If SPS_Debug Then
+      Writeln('Rotating map took '+toStr(getSystemTime - t)+' ms.');
+
+  except
+    Writeln('SPS_RotateMinimap ERROR: '+ExceptionToString(ExceptionType, ExceptionParam));
+  end;
+end;
+
+// Author: marpis & Coh3n
 // Gets the starting area coordinates depending on the area image
 procedure SPS_GetAreaCoords(Area: string; var x, y: integer);
 var
@@ -68,6 +113,7 @@ begin
   //writeln('SPS_GetAreaCoords: '+toStr(point(x, y)));
 end;
 
+// Author: marpis
 // Converts a point from a map piece to a point on the entire map
 function SPS_LocalToGlobal(Area: string; x, y: integer): TPoint;
 var
@@ -78,6 +124,7 @@ begin
   Result.y := (cy * 400) + y;
 end;
 
+// Author: marpis
 // Converts a point from the entire map to a point on the main screen
 function SPS_GlobalToLocal(x, y: integer): TPoint;
 var
@@ -90,6 +137,7 @@ begin
   Result.y := y - (cy * 400);
 end;
 
+// Author: marpis
 // Returns the coordinates (x, y) in the form of a string
 function SPS_AreaCoordsToString(x, y: integer): string;
 begin
@@ -138,6 +186,7 @@ begin
   //writeln('SPS_SortAreas: '+toStr(result));
 end;
 
+// Author: Coh3n
 // Loads the "Area" image
 function SPS_GetArea(Area: string; surface: integer): TMufasaBitmap;
 var
@@ -270,16 +319,22 @@ begin
   //writeln('SPS_GetTopLeftCoords: '+result);
 end;
 
-// SPS2
+// Author: marpis & SRL Community
 function SPS_GetMyPos(): TPoint;
 var
   Minimap: TMufasaBitmap;
   SmallMap: T3DIntegerArray;
-  t, FoundMatches: integer;
+  a, t, FoundMatches: integer;
   P: TPoint;
   Searches: extended;
 begin
   Result := Point(-1, -1);
+
+  if (length(SPS_Areas) <= 0) then
+  begin
+    writeln('ERROR: SPS areas not set');
+    exit;
+  end;
 
   if (not LoggedIn) then
     Exit;
@@ -290,12 +345,21 @@ begin
   if (SPS_MatchesPercent = 0.0) then
     SPS_MatchesPercent := 0.35;
 
-  if (inRange(round(rs_GetCompassAngleDegrees), 10, 350)) then
-    MakeCompass('N');
+  a := round(rs_GetCompassAngleDegrees);
+
+  if (SPS_AnyAngle) and (inRange(a, 10, 350)) then
+    Minimap := SPS_RotateMinimap()
+  else begin
+    if (inRange(a, 10, 350)) then
+      if (SPS_ClickNorth) then
+        ClickNorth(SRL_ANGLE_HIGH)
+      else
+        MakeCompass('N');
+
+    Minimap := SPS_GatherMinimap();
+  end;
 
   t := getSystemTime();
-
-  Minimap := SPS_GatherMinimap;
   SPS_FilterMinimap(Minimap);
   //DrawBitmapDebugImg(Minimap.Index);
   //DisplayDebugImgWindow(150, 150);
@@ -329,6 +393,7 @@ begin
     Writeln('SPS_GetMyPos: Finished in '+ToStr(t)+' ms. Result = '+ToStr(Result));
 end;
 
+// Author: marpis
 // Finds position P in minimap by checking your own location
 function SPS_PosToMM(P: TPoint): TPoint;
 var
@@ -341,9 +406,10 @@ begin
   MyPos := SPS_GetMyPos;
 
   if (Distance(MyPos.X, MyPos.Y, P.X, P.Y) < 75) then
-    Result := Point(MMCX + P.X - MyPos.X, MMCY + P.Y - MyPos.Y);
+    Result := RotatePoint(Point(MMCX + P.X - MyPos.X, MMCY + P.Y - MyPos.Y), 0-rs_GetCompassAngleRadians, MMCX, MMCY);
 end;
 
+// Author: marpis
 // Walks to position, P.
 function SPS_WalkToPos(P: TPoint): boolean;
 var
@@ -369,6 +435,7 @@ begin
   end;
 end;
 
+// Author: marpis
 // Returns true if the point "Pt" is on the minimap
 function SPS_PosOnMM(Pt: TPoint): Boolean;
 var
@@ -378,6 +445,7 @@ begin
   Result := rs_OnMinimap(p.x, p.y);
 end;
 
+// Author: marpis & Coh3n
 // Walks the path "Path"; always walks to the furthest point possible
 function SPS_WalkPath(Path: TPointArray): boolean;
 var
@@ -387,19 +455,20 @@ begin
   H := High(Path);
   T := GetSystemTime + 20000 + Random(5000);
   Fails := 0;
+
   while (not Result) and (GetSystemTime < T) and (Fails < 5) do
   begin
     RunEnergy(20);
-    if P<> SPS_GetMyPos then
-      P := SPS_GetMyPos
-    else
-      Exit;
+    P := SPS_GetMyPos(); // for Lape, remove this call and pass player's pos as a parameter
+
     for I := H downto 0 do
     begin
-      MM.X := MMCX + Path[I].X - P.X;
-      MM.Y := MMCY + Path[I].Y - P.Y;
+      MM := RotatePoint(Point(MMCX + Path[I].X - P.X, MMCY + Path[I].Y - P.Y),
+                        0-rs_GetCompassAngleRadians, MMCX, MMCY);
+
       if MM = MMF then
         Inc(Fails);
+
       D := Distance(MM.X, MM.Y, MMCX, MMCY);
 
       if (D < 10) then
@@ -411,6 +480,7 @@ begin
             MultiMouse(MM.X, MM.Y, 25, 3, false)
           else
             Mouse(MM.X, MM.Y, 5, 5, mouse_Left);
+
           MMF := MM;
           FFlag(Integer(I <> H) * 15);
 
@@ -431,10 +501,8 @@ var
   ctrlPoints: TPointArray;
 begin
   repeat
-    if M <> SPS_GetMyPos then
-      M := SPS_GetMyPos
-    else
-      Exit;
+    M := SPS_GetMyPos();
+
     if (Length(ctrlPoints) = 0) then
       ctrlPoints := TPABetweenPoints(Point(M.X, M.Y), Point(P.X, P.Y), 20 + Random(15), 10);
 
@@ -446,6 +514,7 @@ begin
   until(Result);
 end;
 
+// Author: Coh3n
 // Sets up SPS; needs to be called if you want to switch RS surfaces
 function SPS_Setup(surface: integer; areas: TStringArray): boolean;
 var
