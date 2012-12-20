@@ -458,8 +458,11 @@ begin
 
   while (not Result) and (GetSystemTime < T) and (Fails < 5) do
   begin
+    if (not LoggedIn()) then
+      Exit;
+
     RunEnergy(20);
-    P := SPS_GetMyPos(); // for Lape, remove this call and pass player's pos as a parameter
+    P := SPS_GetMyPos();
 
     for I := H downto 0 do
     begin
@@ -482,7 +485,7 @@ begin
             Mouse(MM.X, MM.Y, 5, 5, mouse_Left);
 
           MMF := MM;
-          FFlag(Integer(I <> H) * 15);
+          FFlag(5 + (Integer(I <> H) * 15));
 
           T := getSystemTime + 20000 + Random(1000);
  	        Break;
@@ -501,6 +504,9 @@ var
   ctrlPoints: TPointArray;
 begin
   repeat
+    if (not LoggedIn()) then
+      Exit;
+
     M := SPS_GetMyPos();
 
     if (Length(ctrlPoints) = 0) then
