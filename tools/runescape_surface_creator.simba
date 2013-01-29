@@ -38,7 +38,7 @@
 *)
 
 program runescape_surface_creator;
-{$DEFINE SMART}
+{$DEFINE SMART8}
 {$i srl/srl.simba}
 
 const
@@ -75,7 +75,8 @@ var
 // returns true if the world map is open
 function mapOpen(): boolean;
 begin
-  result := (getColor(749, 467) = 657930);
+  result := (getColor(749, 467) = 592137);
+  //writeln(toStr(getColor(749, 467)));
 end;
 
 // opens the world map

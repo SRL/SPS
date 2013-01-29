@@ -34,6 +34,7 @@ var
   SPS_AreaMaps: T3DIntegerArray; // Grids of the combined SPS_Areas
   SPS_Tolerance, SPS_MatchesPercent: extended;
   SPS_Accuracy: integer; // Splits minimap/areas into squares of this side length; used for area recognition
+  SPS_IsSetup: boolean; // Used to make sure the user calls SPS_Setup
 
 // Author: marpis & Coh3n
 // Returns an image of the minimap in a TMufasaBitmap
@@ -330,9 +331,9 @@ var
 begin
   Result := Point(-1, -1);
 
-  if (length(SPS_Areas) <= 0) then
+  if (not SPS_IsSetup) then
   begin
-    writeln('ERROR: SPS areas not set');
+    writeln('SPS ERROR: SPS_Setup was never called');
     exit;
   end;
 
@@ -452,6 +453,12 @@ var
   I, H, T, D, Fails: integer;
   P, MM, MMF: TPoint;
 begin
+  if (not SPS_IsSetup) then
+  begin
+    writeln('SPS ERROR: SPS_Setup was never called');
+    exit;
+  end;
+
   H := High(Path);
   T := GetSystemTime + 20000 + Random(5000);
   Fails := 0;
@@ -503,6 +510,12 @@ var
   M: TPoint;
   ctrlPoints: TPointArray;
 begin
+  if (not SPS_IsSetup) then
+  begin
+    writeln('SPS ERROR: SPS_Setup was never called');
+    exit;
+  end;
+
   repeat
     if (not LoggedIn()) then
       Exit;
@@ -545,7 +558,9 @@ begin
           exit;
         end;
 
+    SPS_IsSetup := true;
     result := true;
+
     {$IFDEF SIMBAMAJOR990}
     SPS_BitmapToMap(tmp, SPS_Accuracy, SPS_AreaMaps);
     {$ELSE}
