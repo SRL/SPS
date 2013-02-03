@@ -522,6 +522,9 @@ begin
 
     M := SPS_GetMyPos();
 
+    if (M.X = -1) then
+      Continue;
+
     if (Length(ctrlPoints) = 0) then
       ctrlPoints := TPABetweenPoints(Point(M.X, M.Y), Point(P.X, P.Y), 20 + Random(15), 10);
 
@@ -541,6 +544,9 @@ var
   tmp: TMufasaBitmap;
 begin
   t := getSystemTime;
+
+  setLength(SPS_AreaMaps, 0);
+  setLength(SPS_Areas, 0);
 
   SPS_MultiMouse := true;
   SPS_Accuracy := 4;
