@@ -14,6 +14,12 @@ else
 lazaruspath := /usr/lib/lazarus/0.9.28.2
 endif
 
+ifdef FPC_PATH
+	fpcpath = $(FPC_PATH)
+else
+	fpcpath = fpc
+endif
+
 # Shouldn't need to touch below here, unless you add a unit or something...
 
 # let's detect what linux platform we are running on, so if we run build or the default target
@@ -40,7 +46,7 @@ else
 	our_target := unknown
 endif
 
-CC := fpc
+CC := $(fpcpath)
 build := $(CC)
 
 # -Xd doesn't seem to cause problems when not cross-compiling, and is needed when cross-compiling, so I'm leaving it here
