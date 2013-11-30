@@ -17,7 +17,7 @@ var
   spsAnyAngle: boolean = false;
 
 const
-  SPS_IMG_PATH = IncludePath + 'sps_rs3\SPS\img\';
+  SPS_IMG_PATH = IncludePath + 'SPS\img\';
   SPS_IMG_FMT  = '.png';
 
 const
