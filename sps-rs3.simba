@@ -1,0 +1,328 @@
+{$loadlib sps}
+
+{$include_once srl-6/lib/interfaces/minimap.simba}
+{$include_once srl-6/lib/core/debug.simba}
+{$include_once srl-6/lib/core/players.simba}
+{$include_once srl-6/lib/utilities/drawing.simba}
+
+type
+  TSPSArea = record
+    __mapPath: string;
+    __areaMap: T3DIntegerArray;
+    _accuracy: integer;
+    _tolerance, _minMatchPercent: extended;
+  end;
+
+var
+  spsAnyAngle: boolean = false;
+
+const
+  SPS_IMG_PATH = IncludePath + 'sps_rs3\SPS\img\';
+  SPS_IMG_FMT  = '.png';
+
+const
+  RUNESCAPE_SURFACE = 'runescape_surface\';
+  RUNESCAPE_OTHER = 'runescape_other\';
+
+const
+  __DEFAULT_ACCURACY: integer = 4;
+  __DEFAULT_TOLERANCE: extended = 600.0;
+  __DEFAULT_MIN_MATCH_PERCENT: extended = 0.40;
+
+var
+  sps: TSPSArea;
+
+procedure TSPSArea.setup(imgName, imgFolder: string; accuracy: integer; tolerance, minMatchPercent: extended);
+var
+  tmb: TMufasaBitmap;
+  path: string;
+  t: integer;
+begin
+  t := getSystemTime();
+
+  print('TSPSArea.init()', TDebug.HEADER);
+
+  path := SPS_IMG_PATH + imgFolder + imgName + SPS_IMG_FMT;
+
+  self._accuracy := accuracy;
+  self._tolerance := tolerance;
+  self.__mapPath := path;
+
+  if (spsAnyAngle) then
+    self._minMatchPercent := 0.10 // why? when rotated the bitmap gets bigger with alot of black around it, this will give a low match percentage if left high.
+  else
+    self._minMatchPercent := minMatchPercent;
+
+  print('Using path "' + self.__mapPath + '"');
+
+  if (not fileExists(self.__mapPath)) then
+    print('SPS - Unable to find map image', TDebug.FATAL);
+
+  tmb.init(client.getMBitmaps());
+	tmb.loadFromFile(self.__mapPath);
+
+  SPS_BitmapToMap(tmb, self._accuracy, self.__areaMap);
+
+  tmb.free();
+
+  print('Setup SPS area "' + imgName + '" in ' + intToStr(getSystemTime() - t) + 'ms');
+  print('TSPSArea.init()', TDebug.FOOTER);
+end;
+
+procedure TSPSArea.setup(imgName, imgFolder: string); overload;
+begin
+  self.setup(imgName, imgFolder, __DEFAULT_ACCURACY, __DEFAULT_TOLERANCE,
+             __DEFAULT_MIN_MATCH_PERCENT);
+end;
+
+function SPS_GatherMinimap: TMufasaBitmap;
+begin
+  result.init();
+  result.setSize(140, 140);
+
+  try
+    result.copyClientToBitmap(client.getIOManager(), false, minimap.cx - 70,
+                              minimap.cy -70, minimap.cx + 70, minimap.cy + 70);
+  except
+    print('Failed to gather the minimap', TDebug.ERROR);
+  end;
+end;
+
+function SPS_GatherRotatedMinimap(): TMufasaBitmap;
+var
+  bmp: TMufasaBitmap;
+begin
+  if (not inRange(minimap.getAngleDegrees(), 8, 352)) then
+  begin
+    result := SPS_GatherMinimap();
+    exit();
+  end;
+
+  bmp.init();
+  bmp.setSize(140, 140);
+
+  result.init(client.getMBitmaps());
+
+  try
+    bmp.copyClientToBitmap(client.getIOManager(), false, minimap.cx - 70,
+                           minimap.cy -70, minimap.cx + 70, minimap.cy + 70);
+
+    bmp.rotateBitmap(minimap.getAngleRadians(), result);
+    bmp.free();
+  except
+    print('Failed to gather the minimap', TDebug.ERROR);
+  end;
+end;
+
+procedure TSPSArea.debugPlayerPos();
+var
+  b: TBox;
+  bmp, w, h, t: integer;
+  mid, pos: TPoint;
+begin
+  t := getSystemTime();
+  pos := self.getPlayerPos();
+  t := (getSystemTime() - t);
+
+  if (pos.x = -1) then
+    exit;
+
+  bmp := loadBitmap(self.__mapPath);
+
+  getBitmapSize(bmp, w, h);
+  dec(w); dec(h);
+
+  // draw our postion, and a 120 radius area around our location
+  getMufasaBitmap(bmp).drawCircle(pos, 3, true, clLime);
+  getMufasaBitmap(bmp).drawBox(TBox([max(0, pos.x - 70), max(0, pos.y - 70),
+                               min(w-5, pos.x + 70), min(h, pos.y + 70)]),false, clLime);
+
+  {cropBitmap(bmp, max(0, pos.x - 120), max(0, pos.y - 120),
+                  min(w-10, pos.x + 120), min(h-10, pos.y + 120)); }
+
+  // draw the ingame minimap on and info
+  mid := minimap.getCenterPoint();
+
+  getBitmapSize(bmp, w, h);
+  setBitmapSize(bmp, w + 120, h);
+
+  getMufasaBitmap(bmp).copyClientToBitmap(client.getIOManager(), false, w + 10, 10, mid.x-50, mid.y-50, mid.x+50, mid.y+50);
+  getMufasaBitmap(bmp).drawText('pos: (' + toStr(pos.x) + ', ' + toStr(pos.y) + ')', point(w + 10, 120), clRed);
+  getMufasaBitmap(bmp).drawText('took: ' + toStr(t) + 'ms', point(w + 10, 140), clRed);
+
+  debugBitmap(bmp);
+  freeBitmap(bmp);
+end;
+
+function TSPSArea.getPlayerPos(): TPoint;
+var
+  t, foundMatches, bmpW, bmpH: integer;
+  bmpMinimap: TMufasaBitmap;
+  smallMap: T3DIntegerArray;
+  p: TPoint;
+  searches: extended;
+begin
+  result := [-1, -1];
+
+  if (not isLoggedIn()) then
+    exit();
+
+  t := getSystemTime();
+
+  if (spsAnyAngle) then
+    bmpMinimap := SPS_GatherRotatedMinimap()
+  else
+    bmpMinimap := SPS_GatherMinimap();
+
+  bmpW := bmpMinimap.getWidth();
+  bmpH := bmpMinimap.getHeight();
+
+  setLength(smallMap, 0);
+  SPS_BitmapToMap(bmpMinimap, self._accuracy, smallMap);
+
+  foundMatches := SPS_FindMapInMap(p.x, p.y, self.__areaMap, smallMap, self._tolerance);
+  searches := ((bmpW / self._accuracy) * (bmpH / self._accuracy));
+
+  bmpMinimap.free();
+
+  if ((foundMatches / searches) > self._minMatchPercent) then
+  begin
+    result.x := (p.x * self._accuracy + (bmpW div 2));
+    result.y := (p.y * self._accuracy + (bmpW div 2));
+  end else
+    print('TSPSArea.getPlayerPos(): Didn''t find enough matches accurately calc your postion', TDebug.WARNING);
+
+  print('TSPSArea.getPlayerPos(): result = ' + toStr(result) + ' took ' + intToStr(getSystemTime() - t) + ' ms');
+end;
+
+function SPS_PosToMM(pos, playerPos: TPoint; out res: TPoint): boolean;
+var
+  a: extended;
+begin
+  if (spsAnyAngle) then
+  begin
+    a := minimap.getAngleRadians();
+
+    if (not inRange(degrees(a), 8, 352)) then // no need to rotate
+      res := [minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y]
+    else
+      res := rotatePoint([minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y], a, minimap.cx, minimap.cy);
+  end else
+    res := [minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y];
+
+  result := minimap.isPointOn(res);
+
+  if (not result) then
+    res := [-1, -1];
+end;
+
+function TSPSArea.walkToPos(pos: TPoint; playerPos: TPoint): boolean;
+var
+  p: TPoint;
+begin
+  result := false;
+
+  if (SPS_PosToMM(pos, playerPos, p)) then
+  begin
+    result := true;
+
+    // if distance is less than 10 then there is no real point walking.
+    if (distance(p, minimap.getCenterPoint()) < 10) then
+      exit;
+
+    mouse(p, MOUSE_LEFT);
+
+    if (minimap.isFlagPresent(3000 + random(500))) then
+      while (minimap.isPlayerMoving()) do
+        minimap.waitPlayerMoving();
+
+    if (minimap.isFlagPresent()) then  //case failed
+      minimap.waitPlayerMoving();
+  end;
+
+  print('TSPSArea.walkToPos(): result = '+boolToStr(result));
+end;
+
+function TSPSArea.walkToPos(pos: TPoint): boolean; overload;
+begin
+  self.walkToPos(pos, self.getPlayerPos());
+end;
+
+function TSPSArea.walkPath(path: TPointArray): boolean;
+var
+  i, h, t, fails: integer;
+  p, mm, lastPos: TPoint;
+begin
+  result := false;
+
+  h := high(Path);
+  t := (getSystemTime() + randomRange(15000, 20000));
+  fails := 0;
+
+  lastPos := [-1, -1];
+
+  while (not result) and (getSystemTime() < T) and (fails < 10) do
+  begin
+    if (not isLoggedIn()) then
+      exit;
+
+    p := self.getPlayerPos();
+
+    for i := h downto 0 do
+      if (SPS_PosToMM(path[i], p, mm)) then
+      begin
+        if (distance(mm, minimap.getCenterPoint()) < 10) then
+          break();
+
+        mouse(mm, MOUSE_LEFT);
+
+        if (minimap.isFlagPresent(200 + random(200))) then
+          minimap.waitFlag(10 + random(22));
+
+        t := (getSystemTime() + randomRange(15000, 20000)); //reset the timer
+        break();
+      end;
+
+    if (p.equals(lastPos)) then
+      inc(fails);
+
+    lastPos := p;
+
+    result := (i = h) or (distance(mm, minimap.getCenterPoint()) < 10);
+  end;
+
+  if (minimap.isFlagPresent()) then
+    minimap.waitPlayerMoving();
+
+  print('TSPSArea.walkPath(): result = '+boolToStr(result));
+end;
+
+function TSPSArea.blindWalk(pos: TPoint): boolean;
+var
+  tries: integer;
+  ctrlPoints: TPointArray;
+  p: TPoint;
+begin
+  result := false;
+
+  repeat
+    if (not isLoggedIn()) then
+      exit();
+
+    p := self.getPlayerPos();
+
+    inc(tries);
+
+    if ((tries) > 10) then
+      exit();
+  until (not p.equals([-1, -1]));
+
+  ctrlPoints := TPABetweenPoints(p, pos, 15 + random(25), 15);
+  result := self.walkPath(ctrlPoints);
+
+  print('TSPSArea.blindWalk(): result = '+boolToStr(result));
+end;
+
+
+
+
