@@ -233,8 +233,7 @@ begin
     mouse(p, MOUSE_LEFT);
 
     if (minimap.isFlagPresent(3000 + random(500))) then
-      while (minimap.isPlayerMoving()) do
-        minimap.waitPlayerMoving();
+      minimap.waitPlayerMoving();
 
     if (minimap.isFlagPresent()) then  //case failed
       minimap.waitPlayerMoving();
@@ -288,7 +287,7 @@ begin
 
     lastPos := p;
 
-    result := (i = h) or (distance(mm, minimap.getCenterPoint()) < 10);
+    result := (i = h) or (distance(path[i], path[h]) < 10);
   end;
 
   if (minimap.isFlagPresent()) then
