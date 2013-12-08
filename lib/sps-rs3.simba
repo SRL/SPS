@@ -13,9 +13,6 @@ type
     _tolerance, _minMatchPercent: extended;
   end;
 
-var
-  spsAnyAngle: boolean = false;
-
 const
   SPS_IMG_PATH = IncludePath + 'SPS\img\';
   SPS_IMG_FMT  = '.png';
@@ -28,6 +25,10 @@ const
   __DEFAULT_ACCURACY: integer = 4;
   __DEFAULT_TOLERANCE: extended = 600.0;
   __DEFAULT_MIN_MATCH_PERCENT: extended = 0.40;
+
+var
+  spsAnyAngle: boolean = false;
+  spsMultiMouse: boolean = true;
 
 var
   sps: TSPSArea;
@@ -91,8 +92,11 @@ end;
 function SPS_GatherRotatedMinimap(): TMufasaBitmap;
 var
   bmp: TMufasaBitmap;
+  a: extended;
 begin
-  if (not inRange(minimap.getAngleDegrees(), 8, 352)) then
+  a := minimap.getAngleRadians();
+
+  if (not inRange(degrees(a), 8, 352)) then
   begin
     result := SPS_GatherMinimap();
     exit();
@@ -107,7 +111,7 @@ begin
     bmp.copyClientToBitmap(client.getIOManager(), false, minimap.cx - 70,
                            minimap.cy -70, minimap.cx + 70, minimap.cy + 70);
 
-    bmp.rotateBitmap(minimap.getAngleRadians(), result);
+    bmp.rotateBitmap(a, result);
     bmp.free();
   except
     print('Failed to gather the minimap', TDebug.ERROR);
@@ -169,10 +173,14 @@ begin
 
   t := getSystemTime();
 
-  if (spsAnyAngle) then
-    bmpMinimap := SPS_GatherRotatedMinimap()
-  else
+  if (not spsAnyAngle) then
+  begin
+    if (inRange(minimap.getAngleDegrees(), 8, 352)) then
+      minimap.setAngle(MM_DIRECTION_NORTH);
+
     bmpMinimap := SPS_GatherMinimap();
+  end else
+    bmpMinimap := SPS_GatherRotatedMinimap();
 
   bmpW := bmpMinimap.getWidth();
   bmpH := bmpMinimap.getHeight();
@@ -230,7 +238,10 @@ begin
     if (distance(p, minimap.getCenterPoint()) < 10) then
       exit;
 
-    mouse(p, MOUSE_LEFT);
+    if (spsMultiMouse) then
+      multiClick(p, 25, 3)
+    else
+      mouse(p, MOUSE_LEFT);
 
     if (minimap.isFlagPresent(3000 + random(500))) then
       minimap.waitPlayerMoving();
@@ -244,7 +255,7 @@ end;
 
 function TSPSArea.walkToPos(pos: TPoint): boolean; overload;
 begin
-  self.walkToPos(pos, self.getPlayerPos());
+  result := self.walkToPos(pos, self.getPlayerPos());
 end;
 
 function TSPSArea.walkPath(path: TPointArray): boolean;
@@ -254,7 +265,7 @@ var
 begin
   result := false;
 
-  h := high(Path);
+  h := high(path);
   t := (getSystemTime() + randomRange(15000, 20000));
   fails := 0;
 
@@ -273,10 +284,13 @@ begin
         if (distance(mm, minimap.getCenterPoint()) < 10) then
           break();
 
-        mouse(mm, MOUSE_LEFT);
+        if (spsMultiMouse) then
+          multiClick(p, 25, 3)
+        else
+          mouse(p, MOUSE_LEFT);
 
-        if (minimap.isFlagPresent(200 + random(200))) then
-          minimap.waitFlag(10 + random(22));
+        if (minimap.isFlagPresent(2500 + random(500))) then
+          minimap.waitFlag(10 + random(25));
 
         t := (getSystemTime() + randomRange(15000, 20000)); //reset the timer
         break();
@@ -285,12 +299,12 @@ begin
     if (p.equals(lastPos)) then
       inc(fails);
 
-    lastPos := p;
+    lastPos := p.copy();
 
     result := (i = h) or (distance(path[i], path[h]) < 10);
   end;
 
-  if (minimap.isFlagPresent()) then
+  if (minimap.isFlagPresent()) or (minimap.isPlayerMoving()) then
     minimap.waitPlayerMoving();
 
   print('TSPSArea.walkPath(): result = '+boolToStr(result));
