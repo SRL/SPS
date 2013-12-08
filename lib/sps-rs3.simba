@@ -245,7 +245,7 @@ end;
 
 function TSPSArea.walkToPos(pos: TPoint): boolean; overload;
 begin
-  self.walkToPos(pos, self.getPlayerPos());
+  result := self.walkToPos(pos, self.getPlayerPos());
 end;
 
 function TSPSArea.walkPath(path: TPointArray): boolean;
