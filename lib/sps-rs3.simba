@@ -285,9 +285,9 @@ begin
           break();
 
         if (spsMultiMouse) then
-          multiClick(p, 25, 3)
+          multiClick(mm, 25, 3)
         else
-          mouse(p, MOUSE_LEFT);
+          mouse(mm, MOUSE_LEFT);
 
         if (minimap.isFlagPresent(2500 + random(500))) then
           minimap.waitFlag(10 + random(25));
@@ -303,6 +303,60 @@ begin
 
     result := (i = h) or (distance(path[i], path[h]) < 10);
   end;
+
+  if (minimap.isFlagPresent()) or (minimap.isPlayerMoving()) then
+    minimap.waitPlayerMoving();
+
+  print('TSPSArea.walkPath(): result = '+boolToStr(result));
+end;
+
+function TSPSArea.walkPath2(path: TPointArray): boolean;
+var
+  p, lastPos, mmPoint: TPoint;
+  t, fails, h, l, i: integer;
+begin
+  result := false;;
+
+  h := high(path);
+  l := low(path);
+
+  t := (getSystemTime() + randomRange(15000, 20000));
+
+  repeat
+    if (not isLoggedIn()) then
+      exit(false);
+
+    p := self.getPlayerPos();
+
+    for i := h downto l do
+      if (SPS_PosToMM(path[i], p, mmPoint)) then
+      begin
+        if (distance(minimap.getCenterPoint(), mmPoint) >= 10) then
+        begin
+          if (spsMultiMouse) then
+            multiClick(mmPoint, 25, 3)
+          else
+            mouse(mmPoint, MOUSE_LEFT);
+
+          if (minimap.isFlagPresent(2500 + random(500))) then
+            minimap.waitFlag(10 + random(25));
+        end;
+
+        t := (getSystemTime() + randomRange(15000, 20000));
+
+        result := (i = h) or (distance(path[i], path[h]) < 10);
+
+        if (result) then
+          break(2)
+        else
+          break();
+
+      end;
+
+    if (p.x = lastPos.x) and (p.y = lastPos.y) then
+      inc(fails);
+
+  until (getSystemTime() > t) or (fails > 5);
 
   if (minimap.isFlagPresent()) or (minimap.isPlayerMoving()) then
     minimap.waitPlayerMoving();
