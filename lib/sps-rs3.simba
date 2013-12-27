@@ -11,6 +11,7 @@ type
     __areaMap: T3DIntegerArray;
     _accuracy: integer;
     _tolerance, _minMatchPercent: extended;
+    isSetup: boolean;
   end;
 
 const
@@ -33,43 +34,70 @@ var
 var
   sps: TSPSArea;
 
-procedure TSPSArea.setup(imgName, imgFolder: string; accuracy: integer; tolerance, minMatchPercent: extended);
-var
-  tmb: TMufasaBitmap;
-  path: string;
-  t: integer;
+(*
+  Returns the name of the TSPSArea variable.
+
+  Example:
+    writeln(sps.getName());
+*)
+function TSPSArea.getName(): string;
 begin
-  t := getSystemTime();
-
-  print('TSPSArea.init()', TDebug.HEADER);
-
-  path := SPS_IMG_PATH + imgFolder + imgName + SPS_IMG_FMT;
-
-  self._accuracy := accuracy;
-  self._tolerance := tolerance;
-  self.__mapPath := path;
-
-  if (spsAnyAngle) then
-    self._minMatchPercent := 0.10 // why? when rotated the bitmap gets bigger with alot of black around it, this will give a low match percentage if left high.
-  else
-    self._minMatchPercent := minMatchPercent;
-
-  print('Using path "' + self.__mapPath + '"');
-
-  if (not fileExists(self.__mapPath)) then
-    print('SPS - Unable to find map image', TDebug.FATAL);
-
-  tmb.init(client.getMBitmaps());
-	tmb.loadFromFile(self.__mapPath);
-
-  SPS_BitmapToMap(tmb, self._accuracy, self.__areaMap);
-
-  tmb.free();
-
-  print('Setup SPS area "' + imgName + '" in ' + intToStr(getSystemTime() - t) + 'ms');
-  print('TSPSArea.init()', TDebug.FOOTER);
+  result := between('"', '"', toStr(@self));
 end;
 
+(*
+  Loads and setups the TSPSArea.
+
+  Example:
+    sps.setup('my_map_name', RUNESCAPE_SURFACE, 4, 600.0, 0.40);
+*)
+procedure TSPSArea.setup(imgName, imgFolder: string; accuracy: integer; tolerance, minMatchPercent: extended);
+var
+  bmp: TMufasaBitmap;
+  t: integer;
+  m: extended;
+begin
+  print(self.getName()+'.init()', TDebug.HEADER);
+
+  t := getSystemTime();
+
+  if (fileExists(SPS_IMG_PATH + imgFolder + imgName + SPS_IMG_FMT)) then
+  begin
+    print('Path exists ('+SPS_IMG_PATH + imgFolder + imgName + SPS_IMG_FMT+')');
+
+    self._accuracy := accuracy;
+    self._tolerance := tolerance;
+    self._minMatchPercent := minMatchPercent;
+    self.__mapPath := SPS_IMG_PATH + imgFolder + imgName + SPS_IMG_FMT;
+
+    if (spsAnyAngle) then
+      self._minMatchPercent := 0.10;
+
+    try
+      bmp.init(client.getMBitmaps());
+      bmp.loadFromFile(self.__mapPath);
+
+      SPS_BitmapToMap(bmp, self._accuracy, self.__areaMap);
+    except
+      print(self.getName()+'.setup(): Unable to load map or bitmap to map failed', TDebug.FATAL);
+    finally
+      bmp.free();
+    end;
+
+    self.isSetup := true;
+  end else
+    print(self.getName()+'.setup(): Unable to find map, searched path '+ SPS_IMG_PATH + imgFolder + imgName + SPS_IMG_FMT, TDebug.FATAL);
+
+  print('Setup area "' + imgName + '" in ' + intToStr(getSystemTime() - t) + 'ms');
+  print(self.getName()+'.init()', TDebug.FOOTER);
+end;
+
+(*
+  Overloaded: Loads and setups the TSPSArea without the need for accuracy, tolerance, and min match percent variables.
+
+  Example:
+    sps.setup('my_map_name', RUNESCAPE_SURFACE);
+*)
 procedure TSPSArea.setup(imgName, imgFolder: string); overload;
 begin
   self.setup(imgName, imgFolder, __DEFAULT_ACCURACY, __DEFAULT_TOLERANCE,
@@ -83,7 +111,7 @@ begin
 
   try
     result.copyClientToBitmap(client.getIOManager(), false, minimap.cx - 70,
-                              minimap.cy -70, minimap.cx + 70, minimap.cy + 70);
+                              minimap.cy - 70, minimap.cx + 70, minimap.cy + 70);
   except
     print('Failed to gather the minimap', TDebug.ERROR);
   end;
@@ -105,16 +133,17 @@ begin
   bmp.init();
   bmp.setSize(140, 140);
 
-  result.init(client.getMBitmaps());
+  result.init();
 
   try
     bmp.copyClientToBitmap(client.getIOManager(), false, minimap.cx - 70,
                            minimap.cy -70, minimap.cx + 70, minimap.cy + 70);
 
     bmp.rotateBitmap(a, result);
-    bmp.free();
   except
     print('Failed to gather the minimap', TDebug.ERROR);
+  finally
+    bmp.free();
   end;
 end;
 
@@ -139,10 +168,10 @@ begin
   // draw our postion, and a 120 radius area around our location
   getMufasaBitmap(bmp).drawCircle(pos, 3, true, clLime);
   getMufasaBitmap(bmp).drawBox(TBox([max(0, pos.x - 70), max(0, pos.y - 70),
-                               min(w-5, pos.x + 70), min(h, pos.y + 70)]),false, clLime);
+                               min(w-5, pos.x + 70), min(h, pos.y + 70)]), false, clLime);
 
-  {cropBitmap(bmp, max(0, pos.x - 120), max(0, pos.y - 120),
-                  min(w-10, pos.x + 120), min(h-10, pos.y + 120)); }
+  cropBitmap(bmp, max(0, pos.x - 120), max(0, pos.y - 120),
+                  min(w-10, pos.x + 120), min(h-10, pos.y + 120));
 
   // draw the ingame minimap on and info
   mid := minimap.getCenterPoint();
@@ -158,6 +187,12 @@ begin
   freeBitmap(bmp);
 end;
 
+(*
+  Gets the players postion.
+
+  Example:
+    writeln(sps.getPlayerPos());
+*)
 function TSPSArea.getPlayerPos(): TPoint;
 var
   t, foundMatches, bmpW, bmpH: integer;
@@ -167,6 +202,12 @@ var
   searches: extended;
 begin
   result := [-1, -1];
+
+  if (not self.isSetup) then
+  begin
+    print('Unable to get players postion, sps isn''t setup', TDebug.ERROR);
+    exit();
+  end;
 
   if (not isLoggedIn()) then
     exit();
@@ -185,7 +226,6 @@ begin
   bmpW := bmpMinimap.getWidth();
   bmpH := bmpMinimap.getHeight();
 
-  setLength(smallMap, 0);
   SPS_BitmapToMap(bmpMinimap, self._accuracy, smallMap);
 
   foundMatches := SPS_FindMapInMap(p.x, p.y, self.__areaMap, smallMap, self._tolerance);
@@ -198,9 +238,9 @@ begin
     result.x := (p.x * self._accuracy + (bmpW div 2));
     result.y := (p.y * self._accuracy + (bmpW div 2));
   end else
-    print('TSPSArea.getPlayerPos(): Didn''t find enough matches accurately calc your postion', TDebug.WARNING);
+    print(self.getName()+'.getPlayerPos(): Didn''t find enough matches accurately calc your postion', TDebug.WARNING);
 
-  print('TSPSArea.getPlayerPos(): result = ' + toStr(result) + ' took ' + intToStr(getSystemTime() - t) + ' ms');
+  print(self.getName()+'.getPlayerPos(): result = ' + toStr(result) + ' took ' + intToStr(getSystemTime() - t) + ' ms');
 end;
 
 function SPS_PosToMM(pos, playerPos: TPoint; out res: TPoint): boolean;
