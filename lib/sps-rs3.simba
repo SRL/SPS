@@ -367,6 +367,8 @@ begin
 
     if (p.x = lastPos.x) and (p.y = lastPos.y) then
       inc(fails);
+      
+    lastPos := p;
 
   until (getSystemTime() > t) or (fails > 5);
 
