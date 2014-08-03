@@ -44,8 +44,8 @@
         <UnitName Value="sps"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="95"/>
-        <CursorPos X="27" Y="101"/>
+        <TopLine Value="1"/>
+        <CursorPos X="5" Y="8"/>
         <UsageCount Value="53"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -151,10 +151,13 @@
       <Unit13>
         <Filename Value="Simba\Units\MMLCore\bitmaps.pas"/>
         <UnitName Value="bitmaps"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1113"/>
-        <CursorPos X="9" Y="1125"/>
-        <UsageCount Value="9"/>
+        <TopLine Value="2294"/>
+        <CursorPos X="3" Y="2308"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
       </Unit13>
       <Unit14>
         <Filename Value="legacy.pas"/>
@@ -249,11 +252,10 @@
         <Filename Value="spstypes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="spsTypes"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="42" Y="13"/>
+        <CursorPos X="12" Y="1"/>
         <UsageCount Value="41"/>
         <Loaded Value="True"/>
       </Unit25>
@@ -264,7 +266,7 @@
         <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="17" Y="198"/>
+        <CursorPos X="8" Y="6"/>
         <UsageCount Value="41"/>
         <Loaded Value="True"/>
       </Unit26>
@@ -274,8 +276,8 @@
         <UnitName Value="spsLegacy"/>
         <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="12" Y="97"/>
+        <TopLine Value="78"/>
+        <CursorPos X="48" Y="92"/>
         <UsageCount Value="39"/>
         <Loaded Value="True"/>
       </Unit27>
@@ -285,8 +287,8 @@
         <UnitName Value="spsCv"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="83"/>
+        <TopLine Value="111"/>
+        <CursorPos X="4" Y="120"/>
         <UsageCount Value="27"/>
         <Loaded Value="True"/>
       </Unit28>
@@ -310,123 +312,123 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="spscv.pas"/>
-        <Caret Line="99" Column="16" TopLine="79"/>
+        <Caret Line="131" Column="22" TopLine="116"/>
       </Position1>
       <Position2>
         <Filename Value="spscv.pas"/>
-        <Caret Line="102" Column="15" TopLine="78"/>
+        <Caret Line="13" Column="43" TopLine="2"/>
       </Position2>
       <Position3>
         <Filename Value="spscv.pas"/>
-        <Caret Line="87" Column="52" TopLine="78"/>
+        <Caret Line="16" Column="31" TopLine="1"/>
       </Position3>
       <Position4>
         <Filename Value="spscv.pas"/>
-        <Caret Line="96" Column="5" TopLine="82"/>
+        <Caret Line="136" Column="29" TopLine="116"/>
       </Position4>
       <Position5>
         <Filename Value="spscv.pas"/>
-        <Caret Line="108" Column="12" TopLine="85"/>
+        <Caret Line="133" Column="21" TopLine="117"/>
       </Position5>
       <Position6>
         <Filename Value="spscv.pas"/>
-        <Caret Line="84" Column="23" TopLine="67"/>
+        <Caret Line="139" Column="23" TopLine="117"/>
       </Position6>
       <Position7>
         <Filename Value="spscv.pas"/>
-        <Caret Line="131" Column="22" TopLine="116"/>
+        <Caret Line="136" Column="22" TopLine="118"/>
       </Position7>
       <Position8>
         <Filename Value="spscv.pas"/>
-        <Caret Line="13" Column="43" TopLine="2"/>
+        <Caret Line="140" Column="14" TopLine="118"/>
       </Position8>
       <Position9>
         <Filename Value="spscv.pas"/>
-        <Caret Line="16" Column="31" TopLine="1"/>
+        <Caret Line="22" Column="94" TopLine="10"/>
       </Position9>
       <Position10>
         <Filename Value="spscv.pas"/>
-        <Caret Line="136" Column="29" TopLine="116"/>
+        <Caret Line="5" Column="36" TopLine="1"/>
       </Position10>
       <Position11>
         <Filename Value="spscv.pas"/>
-        <Caret Line="133" Column="21" TopLine="117"/>
+        <Caret Line="1" Column="12" TopLine="1"/>
       </Position11>
       <Position12>
         <Filename Value="spscv.pas"/>
-        <Caret Line="139" Column="23" TopLine="117"/>
+        <Caret Line="11" Column="15" TopLine="1"/>
       </Position12>
       <Position13>
         <Filename Value="spscv.pas"/>
-        <Caret Line="136" Column="22" TopLine="118"/>
+        <Caret Line="5" Column="36" TopLine="1"/>
       </Position13>
       <Position14>
-        <Filename Value="spscv.pas"/>
-        <Caret Line="140" Column="14" TopLine="118"/>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="102" Column="6" TopLine="95"/>
       </Position14>
       <Position15>
         <Filename Value="spscv.pas"/>
-        <Caret Line="22" Column="94" TopLine="10"/>
+        <Caret Line="25" Column="109" TopLine="10"/>
       </Position15>
       <Position16>
-        <Filename Value="spscv.pas"/>
-        <Caret Line="5" Column="36" TopLine="1"/>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="119" Column="44" TopLine="101"/>
       </Position16>
       <Position17>
-        <Filename Value="spscv.pas"/>
-        <Caret Line="1" Column="12" TopLine="1"/>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="80" Column="110" TopLine="63"/>
       </Position17>
       <Position18>
-        <Filename Value="spscv.pas"/>
-        <Caret Line="11" Column="15" TopLine="1"/>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="100" Column="48" TopLine="95"/>
       </Position18>
       <Position19>
-        <Filename Value="spscv.pas"/>
-        <Caret Line="5" Column="36" TopLine="1"/>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="126" Column="5" TopLine="87"/>
       </Position19>
       <Position20>
         <Filename Value="sps.lpr"/>
-        <Caret Line="102" Column="6" TopLine="95"/>
+        <Caret Line="78" Column="10" TopLine="69"/>
       </Position20>
       <Position21>
-        <Filename Value="spscv.pas"/>
-        <Caret Line="25" Column="109" TopLine="10"/>
+        <Filename Value="sps.lpr"/>
+        <Caret Line="18" Column="14" TopLine="7"/>
       </Position21>
       <Position22>
         <Filename Value="sps.lpr"/>
-        <Caret Line="119" Column="44" TopLine="101"/>
+        <Caret Line="126" Column="5" TopLine="98"/>
       </Position22>
       <Position23>
         <Filename Value="sps.lpr"/>
-        <Caret Line="80" Column="110" TopLine="63"/>
+        <Caret Line="12" Column="44" TopLine="4"/>
       </Position23>
       <Position24>
         <Filename Value="sps.lpr"/>
-        <Caret Line="100" Column="48" TopLine="95"/>
+        <Caret Line="127" Column="1" TopLine="120"/>
       </Position24>
       <Position25>
-        <Filename Value="sps.lpr"/>
-        <Caret Line="126" Column="5" TopLine="87"/>
+        <Filename Value="spslegacy.pas"/>
+        <Caret Line="23" Column="1" TopLine="1"/>
       </Position25>
       <Position26>
-        <Filename Value="sps.lpr"/>
-        <Caret Line="78" Column="10" TopLine="69"/>
+        <Filename Value="spscv.pas"/>
+        <Caret Line="100" Column="39" TopLine="1"/>
       </Position26>
       <Position27>
-        <Filename Value="sps.lpr"/>
-        <Caret Line="18" Column="14" TopLine="7"/>
+        <Filename Value="spscv.pas"/>
+        <Caret Line="137" Column="74" TopLine="123"/>
       </Position27>
       <Position28>
-        <Filename Value="sps.lpr"/>
-        <Caret Line="126" Column="5" TopLine="98"/>
+        <Filename Value="spslegacy.pas"/>
+        <Caret Line="52" Column="10" TopLine="38"/>
       </Position28>
       <Position29>
-        <Filename Value="sps.lpr"/>
-        <Caret Line="12" Column="44" TopLine="4"/>
+        <Filename Value="Simba\Units\MMLCore\bitmaps.pas"/>
+        <Caret Line="1125" Column="9" TopLine="1113"/>
       </Position29>
       <Position30>
-        <Filename Value="sps.lpr"/>
-        <Caret Line="127" Column="1" TopLine="120"/>
+        <Filename Value="Simba\Units\MMLCore\bitmaps.pas"/>
+        <Caret Line="168" Column="50" TopLine="145"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

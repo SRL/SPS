@@ -1,5 +1,10 @@
 unit spsCv;
 
+(**
+ * Copyright (c) 2014, Jarl K. Holta || https://github.com/WarPie
+ * All rights reserved.
+ *)
+
 {$mode objfpc}{$H+}
 {$macro on}
 {$define Callconv:=
@@ -112,7 +117,7 @@ procedure SPS_FindMapInMap_CV(LargeMap, SmallMap: T2DIntegerArray; const Method:
 var
   res: Pointer;
   Ptr: PFloat;
-  i,j,W,H: Integer;
+  i,W,H: Integer;
   Img, Templ: CVMat;
 begin
   Img := cvLoadFromMatrix(LargeMap);

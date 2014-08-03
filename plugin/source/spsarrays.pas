@@ -1,5 +1,10 @@
 unit spsArrays;
 
+(**
+ * Copyright (c) 2014, Jarl K. Holta || https://github.com/WarPie
+ * All rights reserved.
+ *)
+
 {$mode objfpc}{$H+}
 {$Inline on}
 {$macro on}

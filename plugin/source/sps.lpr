@@ -1,5 +1,11 @@
 library sps;
 
+(**
+ * Plugin for SPS
+ * Originally work done by Marpis, though has been further expanded with OpenCV
+ * thanks to slackys work @ https://github.com/WarPie/SimbaExt.
+ *)
+
 {$mode objfpc}{$H+}
 
 {$macro on}

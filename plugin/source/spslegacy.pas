@@ -49,7 +49,7 @@ end;
  *)
 procedure SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer; var res: TIntegerArray); Callconv
 var
-  x, y, c, R, G, B: integer;
+  x, y, c: integer;
 begin
   SetLength(Res, 3);
 
