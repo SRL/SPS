@@ -132,6 +132,8 @@ begin
     end;
   end else
     result.copyClientToBitmap(client.getIOManager(), true, minimap.cx - 70, minimap.cy - 70, minimap.cx + 70, minimap.cy + 70);
+
+  Result.ReplaceColor(0, 1);
 end;
 
 (*
