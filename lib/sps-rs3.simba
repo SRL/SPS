@@ -54,8 +54,10 @@ end;
 
   Example:
     sps.setup('my_map_name', RUNESCAPE_SURFACE, 4, 600.0, 0.40);
+  Example using default params:
+    sps.setup('my_map_name', RUNESCAPE_SURFACE);
 *)
-procedure TSPSArea.setup(imgName, imgFolder: string; accuracy: integer; tolerance, minMatchPercent: extended);
+procedure TSPSArea.setup(imgName, imgFolder: string; accuracy: integer = __DEFAULT_ACCURACY; tolerance: extended = __DEFAULT_TOLERANCE; minMatchPercent: extended = __DEFAULT_MIN_MATCH_PERCENT);
 var
   bmp: TMufasaBitmap;
   t: integer;
@@ -94,18 +96,6 @@ begin
 
   print('Setup area "' + imgName + '" in ' + intToStr(getSystemTime() - t) + 'ms');
   print(self.getName()+'.init()', TDebug.FOOTER);
-end;
-
-(*
-  Overloaded: Loads and setups the TSPSArea without the need for accuracy, tolerance, and min match percent variables.
-
-  Example:
-    sps.setup('my_map_name', RUNESCAPE_SURFACE);
-*)
-procedure TSPSArea.setup(imgName, imgFolder: string); overload;
-begin
-  self.setup(imgName, imgFolder, __DEFAULT_ACCURACY, __DEFAULT_TOLERANCE,
-             __DEFAULT_MIN_MATCH_PERCENT);
 end;
 
 (*
