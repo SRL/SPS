@@ -352,10 +352,7 @@ begin
     Minimap := SPS_RotateMinimap()
   else begin
     if (inRange(a, 10, 350)) then
-      if (SPS_ClickNorth) then
-        ClickNorth(SRL_ANGLE_HIGH)
-      else
-        MakeCompass('N');
+      MakeCompass('N');
 
     Minimap := SPS_GatherMinimap();
   end;
@@ -365,13 +362,8 @@ begin
   //DrawBitmapDebugImg(Minimap.Index);
   //DisplayDebugImgWindow(150, 150);
 
-  {$IFDEF SIMBAMAJOR990}
   SetLength(SmallMap, 0); // Using this instead of SmallMap := [];
   SPS_BitmapToMap(Minimap, SPS_Accuracy, SmallMap);
-  {$ELSE}
-  SmallMap := [];
-  SmallMap := SPS_BitmapToMap(Minimap, SPS_Accuracy);
-  {$ENDIF}
 
   FoundMatches := SPS_FindMapInMap(P.x, P.y, SPS_AreaMaps, SmallMap, SPS_Tolerance);
   Searches := ((Minimap.Width / SPS_Accuracy) * (Minimap.Height / SPS_Accuracy));
@@ -443,7 +435,7 @@ var
   p: TPoint;
 begin
   p := SPS_PosToMM(Pt);
-  Result := rs_OnMinimap(p.x, p.y);
+  Result := rs_OnMinimap(p);
 end;
 
 // Author: marpis & Coh3n
@@ -567,11 +559,7 @@ begin
     SPS_IsSetup := true;
     result := true;
 
-    {$IFDEF SIMBAMAJOR990}
     SPS_BitmapToMap(tmp, SPS_Accuracy, SPS_AreaMaps);
-    {$ELSE}
-    SPS_AreaMaps := SPS_BitmapToMap(tmp, SPS_Accuracy);
-    {$ENDIF}
 
     if (surface = RUNESCAPE_SURFACE) then
       SPS_Areas := SPS_SortAreas(areas)
