@@ -2,11 +2,7 @@
 
 {$include_once srl-6/lib/interfaces/minimap.simba}
 {$include_once srl-6/lib/core/debug.simba}
-{$IFDEF SIMBAMAJOR1100}
-  {$include_once srl-6/lib/core/players.simba}
-{$ELSE}
-  {$include_once srl-6/lib/core/players_old.simba}
-{$ENDIF}
+{$include_once srl-6/lib/core/players.simba}
 {$include_once srl-6/lib/utilities/drawing.simba}
 
 type
