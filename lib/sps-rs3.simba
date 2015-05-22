@@ -405,6 +405,55 @@ begin
   print(self.getName()+'.blindWalk(): result = '+boolToStr(result));
 end;
 
+(*
+  Returns true if the player is inside the TBox 'box'
+
+  Example:
+    myArea := intToBox(10, 10, 100, 150);
+    sps.isInBox(myArea);
+*)
+function TSPSArea.isInBox(box: TBox): boolean;
+begin
+  result := PointInBox(self.getPlayerPos(), box);
+  print(self.getName() + '.isInBox: result = ' + boolToStr(result));
+end;
+
+(*
+  Returns true if the player is inside the polygon 'polygon'
+
+  Example:
+    myPoly := [Point(10, 10), Point(15, 10), Point(25, 20)];
+    sps.isInPolygon(myPoly);
+*)
+function TSPSArea.isInPolygon(polygon: TPointArray): boolean;
+var
+  p: TPoint;
+  i, j: integer;
+begin
+  result := false;
+
+  if (length(polygon) < 3) then
+  begin
+    print(self.getName() + '.isInPolygon: less than 3 vertice points in TPA', TDebug.ERROR);
+    exit;
+  end;
+
+  p := self.getPlayerPos();
+  j := high(polygon);
+
+  for i := low(polygon) to high(polygon) do
+  begin
+    if ((((polygon[i].y <= p.y) and (p.y < polygon[j].y)) or ((polygon[j].y <= p.y) and
+       (p.y < polygon[i].y)) ) and (p.x < ((polygon[j].x - polygon[i].x) *
+       (p.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x))) then
+       result := not result;
+
+    j := i;
+  end;
+
+  print(self.getName() + '.isInPolygon: result = ' + boolToStr(result));
+end;
+
 
 
 
