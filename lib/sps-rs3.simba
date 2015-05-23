@@ -42,7 +42,7 @@ var
 *)
 function TSPSArea.getName(): string;
 begin
-  result := between('"', '"', toStr(@self));
+  result := GetGlobalName(@Self);
 end;
 
 (*
@@ -250,11 +250,11 @@ begin
     a := minimap.getAngleRadians();
 
     if (not inRange(degrees(a), 8, 352)) then // no need to rotate
-      res := [minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y]
+      res := Point(minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y)
     else
-      res := rotatePoint([minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y], a, minimap.cx, minimap.cy);
+      res := rotatePoint(Point(minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y), a, minimap.cx, minimap.cy);
   end else
-    res := [minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y];
+    res := Point(minimap.cx + pos.x - playerPos.x, minimap.cy + pos.y - playerPos.y);
 
   result := minimap.isPointOn(res);
 
