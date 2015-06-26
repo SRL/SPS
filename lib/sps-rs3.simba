@@ -268,7 +268,7 @@ end;
   Example:
     sps.walkToPos(point(250, 250), sps.getPlayerPos());
 *)
-function TSPSArea.walkToPos(pos: TPoint; playerPos: TPoint): boolean;
+function TSPSArea.walkToPos(pos: TPoint; playerPos: TPoint; shiftInterval: Integer = 500): boolean;
 var
   p: TPoint;
 begin
@@ -288,10 +288,10 @@ begin
       mouse(p, MOUSE_LEFT);
 
     if (minimap.isFlagPresent(3000 + random(500))) then
-      minimap.waitPlayerMoving();
+      minimap.waitPlayerMoving(shiftInterval);
 
     if (minimap.isFlagPresent()) then  //case failed
-      minimap.waitPlayerMoving();
+      minimap.waitPlayerMoving(shiftInterval);
   end;
 
   print(self.getName()+'.walkToPos(): result = '+boolToStr(result));
@@ -314,7 +314,7 @@ end;
   Example:
     sps.walkPath([point(50, 50), point(100, 100)]);
 *)
-function TSPSArea.walkPath(path: TPointArray): boolean;
+function TSPSArea.walkPath(path: TPointArray; shiftInterval: Integer = 500): boolean;
 var
   p, lastPos, mmPoint: TPoint;
   t, fails, h, l, i: integer;
@@ -365,7 +365,7 @@ begin
   until (getSystemTime() > t) or (fails > 5);
 
   if (minimap.isFlagPresent()) or (minimap.isPlayerMoving()) then
-    minimap.waitPlayerMoving();
+    minimap.waitPlayerMoving(shiftInterval);
 
   print(self.getName()+'.walkPath(): result = '+boolToStr(result));
 end;
