@@ -268,7 +268,7 @@ end;
   Example:
     sps.walkToPos(point(250, 250), sps.getPlayerPos());
 *)
-function TSPSArea.walkToPos(pos: TPoint; playerPos: TPoint; shiftInterval: Integer = 500): boolean;
+function TSPSArea.walkToPos(pos: TPoint; playerPos: TPoint; shiftInterval: Integer = 500; waitMoving: Boolean = True): boolean;
 var
   p: TPoint;
 begin
@@ -287,11 +287,14 @@ begin
     else
       mouse(p, MOUSE_LEFT);
 
-    if (minimap.isFlagPresent(3000 + random(500))) then
-      minimap.waitPlayerMoving(shiftInterval);
+    if waitMoving then
+    begin
+      if (minimap.isFlagPresent(3000 + random(500))) then
+        minimap.waitPlayerMoving(shiftInterval);
 
-    if (minimap.isFlagPresent()) then  //case failed
-      minimap.waitPlayerMoving(shiftInterval);
+      if (minimap.isFlagPresent()) then  //case failed
+        minimap.waitPlayerMoving(shiftInterval);
+    end;
   end;
 
   print(self.getName()+'.walkToPos(): result = '+boolToStr(result));
@@ -313,8 +316,10 @@ end;
 
   Example:
     sps.walkPath([point(50, 50), point(100, 100)]);
+    sps.walkPath(PathToBank);
+    sps.walkPath(PathToBank, 500, False); // Won't wait until the player is not moving
 *)
-function TSPSArea.walkPath(path: TPointArray; shiftInterval: Integer = 500): boolean;
+function TSPSArea.walkPath(path: TPointArray; shiftInterval: Integer = 500; waitMoving: Boolean = True): boolean;
 var
   p, lastPos, mmPoint: TPoint;
   t, fails, h, l, i: integer;
@@ -364,8 +369,9 @@ begin
 
   until (getSystemTime() > t) or (fails > 5);
 
-  if (minimap.isFlagPresent()) or (minimap.isPlayerMoving()) then
-    minimap.waitPlayerMoving(shiftInterval);
+  if waitMoving then
+    if (minimap.isFlagPresent() or minimap.isPlayerMoving()) then
+      minimap.waitPlayerMoving(shiftInterval);
 
   print(self.getName()+'.walkPath(): result = '+boolToStr(result));
 end;
