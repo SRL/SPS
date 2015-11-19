@@ -366,6 +366,9 @@ begin
       inc(fails);
       
     lastPos := p;
+    
+    if minimap.closeWorldMap() then
+      print(self.getName()+'.closeWorldMap(): result = 'True');
 
   until (getSystemTime() > t) or (fails > 5);
 
