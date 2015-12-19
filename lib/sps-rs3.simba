@@ -312,6 +312,19 @@ begin
 end;
 
 (*
+  Overloaded function, reqiures no playerPos var, will automaticly call
+  self.getPlayerPos(), but has waitMoving parameter.
+
+  Example:
+    sps.walkToPos(point(250, 250));
+*)
+
+function TSPSArea.walkToPos(pos: TPoint; waitMoving: Boolean): boolean; overload;
+begin
+  result := self.walkToPos(pos, self.getPlayerPos(), waitMoving);
+end;    
+
+(*
   Walks a path of points.
 
   Example:
