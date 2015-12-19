@@ -438,6 +438,41 @@ begin
 end;
 
 (*
+  Returns true if the player is inside the TBox 'box', if not it'll walk towards
+  the center of the box.
+
+  Example:
+    fishArea := intToBox(10, 10, 100, 150);
+    if sps.isInBox(fishArea, randomRange(5000, 7000)) then
+      doSomeFishing();
+*)
+
+function TSPSArea.walkInBox(b: tbox; waitTime: integer): boolean;
+var
+  t: TCountDown;
+  pos: TPoint;
+begin
+  t.setTime(waitTime);
+
+  repeat
+    pos := sps.getPlayerPos();
+    result := pointInBox(pos, b);
+
+    if (not result) then
+    begin
+      sps.walkToPos(point(pos.x + randomRange(0, b.getMiddle().x - pos.x), pos.y + randomRange(0, b.getMiddle().y - pos.y)), false);
+
+      if (waitTime > 0) then
+        wait(randomRange(round(waitTime / 10), round(waitTime / 5)))
+      else
+        wait(randomRange(200, 400));
+    end;
+  until result or t.isFinished();
+
+  print('TSPSArea.walkInBox(): Result = ' + boolToStr(result));
+end;  
+
+(*
   Returns true if the player is inside the polygon 'polygon'
 
   Example:
