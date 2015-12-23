@@ -207,7 +207,6 @@ begin
   begin
     print(self.getName()+'.getPlayerPos(): Angle is at '+floatToStr(a)+', Setting angle to 0 degrees');
     minimap.clickCompass();
-  //  mainScreen.setAngle(MS_ANGLE_HIGH);
   end;
 
   bmp := SPS_GatherMinimap(spsAnyAngle, a);
