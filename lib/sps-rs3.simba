@@ -207,7 +207,7 @@ begin
   begin
     print(self.getName()+'.getPlayerPos(): Angle is at '+floatToStr(a)+', Setting angle to 0 degrees');
     minimap.clickCompass();
-    mainScreen.setAngle(MS_ANGLE_HIGH);
+  //  mainScreen.setAngle(MS_ANGLE_HIGH);
   end;
 
   bmp := SPS_GatherMinimap(spsAnyAngle, a);
@@ -322,7 +322,7 @@ end;
 function TSPSArea.walkToPos(pos: TPoint; waitMoving: Boolean): boolean; overload;
 begin
   result := self.walkToPos(pos, self.getPlayerPos(), waitMoving);
-end;    
+end;
 
 (*
   Walks a path of points.
@@ -439,15 +439,42 @@ end;
 
 (*
   Returns true if the player is inside the TBox 'box', if not it'll walk towards
-  the center of the box.
+  the center of the box. Usefull for FSM style loops, otherwise use waitWalkInBox.
 
   Example:
     fishArea := intToBox(10, 10, 100, 150);
-    if sps.isInBox(fishArea, randomRange(5000, 7000)) then
+    if sps.walkInBox(fishArea) then
       doSomeFishing();
 *)
 
-function TSPSArea.walkInBox(b: tbox; waitTime: integer): boolean;
+function TSPSArea.walkInBox(b: tbox): boolean;
+var
+  pos: TPoint;
+begin
+  pos := sps.getPlayerPos();
+
+  if (pos.x = -1) or (pos.y = -1) then
+    exit(false);
+
+  result := pointInBox(pos, b);
+
+  if (not result) then
+    sps.walkToPos(point(pos.x + randomRange(0, b.getMiddle().x - pos.x), pos.y + randomRange(0, b.getMiddle().y - pos.y)), false);
+
+  print('TSPSArea.walkInBox(): Result = ' + boolToStr(result));
+end;
+
+(*
+  Returns true if the player is inside the TBox 'box', if not it'll walk towards
+  the center of the box. But will repeat untill **waitTime** has been reached.
+
+  Example:
+    fishArea := intToBox(10, 10, 100, 150);
+    if sps.waitWalkInBox(fishArea, randomRange(5000, 7000)) then
+      doSomeFishing();
+*)
+
+function TSPSArea.waitWalkInBox(b: tbox; waitTime: integer): boolean;
 var
   t: TCountDown;
   pos: TPoint;
@@ -455,22 +482,20 @@ begin
   t.setTime(waitTime);
 
   repeat
-    pos := sps.getPlayerPos();
-    result := pointInBox(pos, b);
+    result := self.walkInBox(b);
 
     if (not result) then
     begin
-      sps.walkToPos(point(pos.x + randomRange(0, b.getMiddle().x - pos.x), pos.y + randomRange(0, b.getMiddle().y - pos.y)), false);
-
       if (waitTime > 0) then
         wait(randomRange(round(waitTime / 10), round(waitTime / 5)))
       else
-        wait(randomRange(200, 400));
+        wait(randomRange(300, 600));
     end;
+
   until result or t.isFinished();
 
-  print('TSPSArea.walkInBox(): Result = ' + boolToStr(result));
-end;  
+print('TSPSArea.waitWalkInBox(): Result = ' + boolToStr(result));
+end;
 
 (*
   Returns true if the player is inside the polygon 'polygon'
@@ -507,7 +532,3 @@ begin
 
   print(self.getName() + '.isInPolygon: result = ' + boolToStr(result));
 end;
-
-
-
-
