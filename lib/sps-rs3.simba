@@ -207,6 +207,7 @@ begin
   begin
     print(self.getName()+'.getPlayerPos(): Angle is at '+floatToStr(a)+', Setting angle to 0 degrees');
     minimap.clickCompass();
+  //  mainScreen.setAngle(MS_ANGLE_HIGH);
   end;
 
   bmp := SPS_GatherMinimap(spsAnyAngle, a);
@@ -437,16 +438,16 @@ begin
 end;
 
 (*
-  Returns true if the player is inside the TBox 'box', if not it'll walk towards
-  the center of the box. Usefull for FSM style loops, otherwise use waitWalkInBox.
+  Returns true if the player is inside the TBox **b**, if not it'll walk towards
+  the center of the box.
 
   Example:
     fishArea := intToBox(10, 10, 100, 150);
-    if sps.walkInBox(fishArea) then
+    if sps.walkToBox(fishArea) then
       doSomeFishing();
 *)
 
-function TSPSArea.walkInBox(b: tbox): boolean;
+function TSPSArea.walkToBox(b: tbox): boolean;
 var
   pos: TPoint;
 begin
@@ -460,20 +461,19 @@ begin
   if (not result) then
     sps.walkToPos(point(pos.x + randomRange(0, b.getMiddle().x - pos.x), pos.y + randomRange(0, b.getMiddle().y - pos.y)), false);
 
-  print('TSPSArea.walkInBox(): Result = ' + boolToStr(result));
+  print('TSPSArea.walkToBox(): Result = ' + boolToStr(result));
 end;
 
 (*
-  Returns true if the player is inside the TBox 'box', if not it'll walk towards
+  Returns true if the player is inside the TBox **b**, if not it'll walk towards
   the center of the box. But will repeat untill **waitTime** has been reached.
 
   Example:
     fishArea := intToBox(10, 10, 100, 150);
-    if sps.waitWalkInBox(fishArea, randomRange(5000, 7000)) then
+    if sps.walkToBox(fishArea, randomRange(5000, 7000)) then
       doSomeFishing();
 *)
-
-function TSPSArea.waitWalkInBox(b: tbox; waitTime: integer): boolean;
+function TSPSArea.walkToBox(b: tbox; waitTime: integer): boolean; overload;
 var
   t: TCountDown;
   pos: TPoint;
@@ -481,7 +481,7 @@ begin
   t.setTime(waitTime);
 
   repeat
-    result := self.walkInBox(b);
+    result := self.walkToBox(b);
 
     if (not result) then
     begin
@@ -493,7 +493,7 @@ begin
 
   until result or t.isFinished();
 
-print('TSPSArea.waitWalkInBox(): Result = ' + boolToStr(result));
+print('TSPSArea.walkToBox(): Result = ' + boolToStr(result));
 end;
 
 (*
