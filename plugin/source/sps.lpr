@@ -51,6 +51,7 @@ procedure SPS_MakeColorBox(bmp: TMufasaBitmap; x1, y1, SideLength: integer; var 
 var
   x, y, C, R, G, B: integer;
 begin
+  SetLength(Res, 0);
   SetLength(Res, 3);
 
   for x := (x1 + SideLength - 1) downto x1 do
