@@ -71,7 +71,8 @@ begin
     self._tolerance := tolerance;
     self._minMatchPercent := minMatchPercent;
     self.__mapPath := SPS_IMG_PATH + imgFolder + imgName + SPS_IMG_FMT;
-
+    SetLength(self.__areaMap, 0);
+    
     if (spsAnyAngle) then
       self._minMatchPercent := 0.10;
 
