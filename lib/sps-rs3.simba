@@ -463,16 +463,33 @@ begin
   if (not result) then
   begin
 
-    repeat
-      x := randomRange(0, b.getMiddle().x - pos.x);
-      y := randomRange(0, b.getMiddle().y - pos.y);
-    until inRange(x, -75, 75) and inRange(y, -75, 75);
+      x := randomRange(0, gaussBox(b).x - pos.x);
+
+      if (x > 75) then
+        x := randomRange(65, 75)
+      else if (x < -75) then
+        x := randomRange(-65, -75)
+      else if inRange(x, 1, 10) then
+        x := randomRange(10, 20)
+      else if inRange(x, -1, -10) then
+        x := randomRange(-10, -20);
+
+      y := randomRange(0, gaussBox(b).y - pos.y);
+
+      if (y > 75) then
+        y := randomRange(65, 75)
+      else if (y < -75) then
+        y := randomRange(-65, -75)
+      else if inRange(y, 1, 10) then
+        y := randomRange(10, 20)
+      else if inRange(y, -1, -10) then
+        y := randomRange(-10, -20);
 
     sps.walkToPos(point(pos.x + x, pos.y + y), false);
   end;
 
   print('TSPSArea.walkToBox(): Result = ' + boolToStr(result));
-end;
+end;    
 
 (*
   Returns true if the player is inside the TBox **b**, if not it'll walk towards
