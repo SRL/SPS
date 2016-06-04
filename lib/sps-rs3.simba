@@ -453,7 +453,7 @@ var
   pos: TPoint;
   x, y: integer;
 begin
-  pos := sps.getPlayerPos();
+  pos := self.getPlayerPos();
 
   if (pos.x = -1) or (pos.y = -1) then
     exit(false);
@@ -485,7 +485,7 @@ begin
       else if inRange(y, -1, -10) then
         y := randomRange(-10, -20);
 
-    sps.walkToPos(point(pos.x + x, pos.y + y), false);
+    self.walkToPos(point(pos.x + x, pos.y + y), false);
   end;
 
   print('TSPSArea.walkToBox(): Result = ' + boolToStr(result));
