@@ -489,7 +489,7 @@ begin
   end;
 
   print('TSPSArea.walkToBox(): Result = ' + boolToStr(result));
-end;    
+end;
 
 (*
   Returns true if the player is inside the TBox **b**, if not it'll walk towards
@@ -511,7 +511,7 @@ begin
     result := self.walkToBox(b);
 
     if (not result) then
-      wait(randomRange(300, 900));
+      wait(randomRange(1200, 1800));
 
   until result or t.isFinished();
 
