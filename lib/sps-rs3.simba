@@ -451,8 +451,9 @@ end;
 function TSPSArea.walkToBox(b: tbox): boolean;
 var
   pos: TPoint;
+  x, y: integer;
 begin
-  pos := sps.getPlayerPos();
+  pos := self.getPlayerPos();
 
   if (pos.x = -1) or (pos.y = -1) then
     exit(false);
@@ -460,7 +461,32 @@ begin
   result := pointInBox(pos, b);
 
   if (not result) then
-    sps.walkToPos(point(pos.x + randomRange(0, b.getMiddle().x - pos.x), pos.y + randomRange(0, b.getMiddle().y - pos.y)), false);
+  begin
+
+      x := randomRange(0, gaussBox(b).x - pos.x);
+
+      if (x > 75) then
+        x := randomRange(65, 75)
+      else if (x < -75) then
+        x := randomRange(-65, -75)
+      else if inRange(x, 1, 10) then
+        x := randomRange(10, 20)
+      else if inRange(x, -1, -10) then
+        x := randomRange(-10, -20);
+
+      y := randomRange(0, gaussBox(b).y - pos.y);
+
+      if (y > 75) then
+        y := randomRange(65, 75)
+      else if (y < -75) then
+        y := randomRange(-65, -75)
+      else if inRange(y, 1, 10) then
+        y := randomRange(10, 20)
+      else if inRange(y, -1, -10) then
+        y := randomRange(-10, -20);
+
+    self.walkToPos(point(pos.x + x, pos.y + y), false);
+  end;
 
   print('TSPSArea.walkToBox(): Result = ' + boolToStr(result));
 end;
@@ -485,12 +511,7 @@ begin
     result := self.walkToBox(b);
 
     if (not result) then
-    begin
-      if (waitTime > 0) then
-        wait(randomRange(round(waitTime / 10), round(waitTime / 5)))
-      else
-        wait(randomRange(300, 600));
-    end;
+      wait(randomRange(1200, 1800));
 
   until result or t.isFinished();
 
